@@ -7,14 +7,19 @@ use rfd::FileDialog;
 use crate::crypto::{self, ContentKind, DecryptedPayload};
 use crate::io;
 
-const SUCCESS: egui::Color32 = egui::Color32::from_rgb(22, 101, 52);
-const SUCCESS_BG: egui::Color32 = egui::Color32::from_rgb(240, 253, 244);
-const ERROR: egui::Color32 = egui::Color32::from_rgb(185, 28, 28);
+// 浅色主色调 (indigo)
+const PRIMARY: egui::Color32 = egui::Color32::from_rgb(79, 70, 229);
+const SUCCESS: egui::Color32 = egui::Color32::from_rgb(16, 185, 129);
+const SUCCESS_BG: egui::Color32 = egui::Color32::from_rgb(236, 253, 245);
+const ERROR: egui::Color32 = egui::Color32::from_rgb(239, 68, 68);
 const ERROR_BG: egui::Color32 = egui::Color32::from_rgb(254, 242, 242);
-const DARK_SUCCESS: egui::Color32 = egui::Color32::from_rgb(134, 239, 172);
-const DARK_SUCCESS_BG: egui::Color32 = egui::Color32::from_rgb(20, 83, 45);
-const DARK_ERROR: egui::Color32 = egui::Color32::from_rgb(252, 165, 165);
-const DARK_ERROR_BG: egui::Color32 = egui::Color32::from_rgb(127, 29, 29);
+
+// 深色主色调
+const DARK_PRIMARY: egui::Color32 = egui::Color32::from_rgb(99, 102, 241);
+const DARK_SUCCESS: egui::Color32 = egui::Color32::from_rgb(52, 211, 153);
+const DARK_SUCCESS_BG: egui::Color32 = egui::Color32::from_rgb(20, 50, 40);
+const DARK_ERROR: egui::Color32 = egui::Color32::from_rgb(248, 113, 113);
+const DARK_ERROR_BG: egui::Color32 = egui::Color32::from_rgb(50, 25, 25);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum OperationMode {
@@ -53,6 +58,7 @@ pub struct EncrustApp {
     decrypted_file_name: Option<String>,
     decrypted_output_path: Option<PathBuf>,
     toast: Option<Toast>,
+    drag_hovered: bool,
 }
 
 impl Default for EncrustApp {
@@ -70,6 +76,7 @@ impl Default for EncrustApp {
             decrypted_file_name: None,
             decrypted_output_path: None,
             toast: None,
+            drag_hovered: false,
         }
     }
 }
@@ -78,76 +85,72 @@ impl eframe::App for EncrustApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         apply_app_style(ctx);
         self.capture_dropped_files(ctx);
-        let window_width = ctx.screen_rect().width();
-        let side_width = if window_width < 820.0 {
-            220.0
-        } else if window_width < 1040.0 {
-            260.0
-        } else {
-            300.0
-        };
 
+        let side_width = 240.0;
+
+        // 顶部导航栏
         egui::TopBottomPanel::top("menu_bar")
             .resizable(false)
-            .exact_height(42.0)
+            .exact_height(52.0)
             .frame({
                 let mut frame = egui::Frame::side_top_panel(&ctx.style());
-                frame.inner_margin = egui::Margin::ZERO;
-                frame.stroke = egui::Stroke::NONE;
+                frame.inner_margin = egui::Margin::symmetric(16, 0);
+                frame.stroke = egui::Stroke::new(1.0, theme_colors(ctx).border);
                 frame
             })
             .show(ctx, |ui| {
                 let colors = theme_colors(ctx);
                 ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
-                    ui.add_space(8.0);
-                    ui.spacing_mut().item_spacing.x = 0.0;
+                    ui.spacing_mut().item_spacing.x = 4.0;
 
+                    // Logo / 标题
+                    ui.label(egui::RichText::new("🔐").size(18.0));
+                    ui.label(
+                        egui::RichText::new("Encrust")
+                            .size(16.0)
+                            .color(colors.text_main)
+                            .strong(),
+                    );
+
+                    ui.add_space(24.0);
+
+                    // 模式切换按钮
                     for (mode, label) in [
                         (OperationMode::Encrypt, "加密"),
                         (OperationMode::Decrypt, "解密"),
                     ] {
                         let active = self.operation_mode == mode;
-                        let resp = ui.add_sized(
-                            [72.0, 36.0],
-                            egui::Label::new(
-                                egui::RichText::new(label)
-                                    .color(if active {
-                                        colors.text_main
-                                    } else {
-                                        colors.text_muted
-                                    })
-                                    .strong(),
-                            )
-                            .selectable(false)
-                            .sense(egui::Sense::click()),
-                        );
-                        if resp.clicked() {
+                        let text = egui::RichText::new(label)
+                            .size(14.0)
+                            .color(if active {
+                                colors.text_on_primary
+                            } else {
+                                colors.text_muted
+                            })
+                            .strong();
+                        let btn = egui::Button::new(text)
+                            .fill(if active {
+                                colors.primary
+                            } else {
+                                egui::Color32::TRANSPARENT
+                            })
+                            .corner_radius(8)
+                            .stroke(egui::Stroke::NONE)
+                            .min_size([72.0, 34.0].into());
+                        if ui.add(btn).clicked() {
                             self.set_operation_mode(mode);
-                        }
-                        if active {
-                            let rect = resp.rect;
-                            let bar_y = rect.bottom();
-                            let bar_height = 2.5;
-                            let bar_width = 28.0;
-                            let bar_x = rect.center().x - bar_width / 2.0;
-                            ui.painter().rect_filled(
-                                egui::Rect::from_min_max(
-                                    egui::pos2(bar_x, bar_y - bar_height),
-                                    egui::pos2(bar_x + bar_width, bar_y),
-                                ),
-                                0.0,
-                                colors.text_main,
-                            );
                         }
                     }
                 });
             });
 
+        // 左侧边栏
         egui::SidePanel::left("settings")
             .resizable(false)
             .exact_width(side_width)
+            .frame(egui::Frame::side_top_panel(&ctx.style()).stroke(egui::Stroke::NONE))
             .show(ctx, |ui| {
-                ui.add_space(14.0);
+                ui.add_space(16.0);
                 ui.horizontal(|ui| {
                     ui.add_space(16.0);
                     ui.vertical(|ui| {
@@ -157,24 +160,28 @@ impl eframe::App for EncrustApp {
                 });
             });
 
+        // 主内容区（外层包裹 ScrollArea，防止内容超出窗口边界）
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.add_space(18.0);
-            let horizontal_padding = 18.0;
+            ui.add_space(16.0);
+            let horizontal_padding = 20.0;
             let content_width = (ui.available_width() - horizontal_padding * 2.0)
                 .max(320.0)
-                .min(760.0);
-            let content_height = (ui.available_height() - 18.0).max(360.0);
+                .min(720.0);
 
-            ui.horizontal(|ui| {
-                ui.add_space(horizontal_padding);
-                ui.vertical(|ui| {
-                    ui.set_width(content_width);
-                    match self.operation_mode {
-                        OperationMode::Encrypt => self.render_encrypt_view(ui, content_height),
-                        OperationMode::Decrypt => self.render_decrypt_view(ui, content_height),
-                    }
+            egui::ScrollArea::vertical()
+                .auto_shrink([false; 2])
+                .show(ui, |ui| {
+                    ui.horizontal(|ui| {
+                        ui.add_space(horizontal_padding);
+                        ui.vertical(|ui| {
+                            ui.set_width(content_width);
+                            match self.operation_mode {
+                                OperationMode::Encrypt => self.render_encrypt_view(ui),
+                                OperationMode::Decrypt => self.render_decrypt_view(ui),
+                            }
+                        });
+                    });
                 });
-            });
         });
 
         self.render_toast(ctx);
@@ -182,12 +189,18 @@ impl eframe::App for EncrustApp {
 }
 
 impl EncrustApp {
-    /// egui 把拖拽文件放在输入事件里。这里每帧检查一次，
-    /// 如果发现用户拖入了文件，就根据当前顶层模式分配给加密或解密流程。
     fn capture_dropped_files(&mut self, ctx: &egui::Context) {
-        let dropped_files = ctx.input(|input| input.raw.dropped_files.clone());
+        let (dropped_files, hovered_files) = ctx.input(|input| {
+            (
+                input.raw.dropped_files.clone(),
+                input.raw.hovered_files.clone(),
+            )
+        });
+
+        self.drag_hovered = !hovered_files.is_empty();
 
         if let Some(path) = dropped_files.into_iter().find_map(|file| file.path) {
+            self.drag_hovered = false;
             match self.operation_mode {
                 OperationMode::Encrypt => {
                     self.encrypt_input_mode = EncryptInputMode::File;
@@ -203,20 +216,35 @@ impl EncrustApp {
     }
 
     fn render_sidebar(&mut self, ui: &mut egui::Ui) {
-        ui.heading("选项");
-        ui.separator();
+        let colors = theme_colors(ui.ctx());
+
+        ui.label(
+            egui::RichText::new("选项")
+                .size(13.0)
+                .color(colors.text_muted)
+                .strong(),
+        );
+        ui.add_space(12.0);
 
         if self.operation_mode == OperationMode::Encrypt {
-            ui.label("输入类型");
-            self.render_encrypt_input_tabs(ui);
-            ui.add_space(14.0);
+            sidebar_card(ui, "输入类型", |ui| {
+                self.render_encrypt_input_tabs(ui);
+            });
+            ui.add_space(16.0);
         } else {
-            ui.label("输入");
-            ui.label("右侧选择或拖入 .encrust 文件");
-            ui.add_space(14.0);
+            sidebar_card(ui, "输入", |ui| {
+                ui.label(
+                    egui::RichText::new("右侧选择或拖入 .encrust 文件")
+                        .color(colors.text_muted)
+                        .size(13.0),
+                );
+            });
+            ui.add_space(16.0);
         }
 
-        self.render_passphrase_input(ui);
+        sidebar_card(ui, "密钥", |ui| {
+            self.render_passphrase_input(ui);
+        });
     }
 
     fn set_operation_mode(&mut self, mode: OperationMode) {
@@ -226,208 +254,461 @@ impl EncrustApp {
         }
     }
 
-    fn render_encrypt_view(&mut self, ui: &mut egui::Ui, available_height: f32) {
-        let text_height = (available_height - 300.0).clamp(180.0, 340.0);
-
+    fn render_encrypt_view(&mut self, ui: &mut egui::Ui) {
         match self.encrypt_input_mode {
             EncryptInputMode::File => self.render_file_encrypt_input(ui),
-            EncryptInputMode::Text => self.render_text_encrypt_input(ui, text_height),
+            EncryptInputMode::Text => self.render_text_encrypt_input(ui),
         }
 
-        ui.add_space(12.0);
+        ui.add_space(16.0);
         self.render_encrypted_output_picker(ui);
-        ui.add_space(14.0);
+        ui.add_space(16.0);
         self.render_encrypt_action(ui);
-        ui.add_space(60.0);
+        ui.add_space(20.0);
     }
 
-    fn render_decrypt_view(&mut self, ui: &mut egui::Ui, available_height: f32) {
-        ui.heading("解密");
-        ui.label("将 .encrust 文件拖拽到窗口中，或通过系统文件选择器手动选择");
-        ui.add_space(12.0);
+    fn render_decrypt_view(&mut self, ui: &mut egui::Ui) {
+        let colors = theme_colors(ui.ctx());
 
-        ui.group(|ui| {
-            ui.set_width(ui.available_width());
-            ui.label(egui::RichText::new("加密文件").strong());
-            ui.add_space(12.0);
-
-            if ui.button("选择加密文件").clicked() {
-                if let Some(path) = FileDialog::new()
-                    .add_filter("Encrust 加密文件", &["encrust"])
-                    .pick_file()
-                {
-                    self.set_encrypted_input_path(path);
-                }
-            }
-
-            match &self.encrypted_input_path {
-                Some(path) => {
-                    path_display(ui, "已选择", &path.display().to_string());
-                }
-                None => {}
-            }
+        ui.horizontal(|ui| {
+            ui.label(
+                egui::RichText::new("解密")
+                    .size(20.0)
+                    .color(colors.text_main)
+                    .strong(),
+            );
         });
+        ui.add_space(6.0);
+        ui.label(
+            egui::RichText::new("将 .encrust 文件拖拽到窗口中，或通过系统文件选择器手动选择")
+                .color(colors.text_muted)
+                .size(13.0),
+        );
+        ui.add_space(16.0);
 
-        ui.add_space(12.0);
+        let drop_area_height = if self.encrypted_input_path.is_some() {
+            88.0
+        } else {
+            160.0
+        };
+        let drop_stroke = if self.drag_hovered {
+            egui::Stroke::new(2.0, colors.primary)
+        } else {
+            egui::Stroke::new(1.5, colors.border)
+        };
+        let drop_fill = if self.drag_hovered {
+            colors.primary_soft
+        } else {
+            colors.surface
+        };
+
+        let drop_response = egui::Frame::new()
+            .fill(drop_fill)
+            .stroke(drop_stroke)
+            .corner_radius(10)
+            .inner_margin(egui::Margin::same(16))
+            .show(ui, |ui| {
+                ui.set_width(ui.available_width());
+                ui.set_min_height(drop_area_height);
+                ui.with_layout(
+                    egui::Layout::top_down(egui::Align::Center)
+                        .with_main_align(egui::Align::Center),
+                    |ui| {
+                        if let Some(path) = &self.encrypted_input_path {
+                            ui.add_space(4.0);
+                            ui.label(
+                                egui::RichText::new("已选择加密文件")
+                                    .color(colors.text_muted)
+                                    .size(12.0),
+                            );
+                            ui.add_space(8.0);
+                            ui.label(
+                                egui::RichText::new(path.display().to_string())
+                                    .color(colors.text_main)
+                                    .size(14.0)
+                                    .strong(),
+                            );
+                        } else {
+                            let icon = if self.drag_hovered { "↓" } else { "🔒" };
+                            ui.label(egui::RichText::new(icon).size(32.0).color(
+                                if self.drag_hovered {
+                                    colors.primary
+                                } else {
+                                    colors.text_muted
+                                },
+                            ));
+                            ui.add_space(8.0);
+                            ui.label(
+                                egui::RichText::new(if self.drag_hovered {
+                                    "释放以选择加密文件"
+                                } else {
+                                    "拖拽 .encrust 文件到此处"
+                                })
+                                .color(if self.drag_hovered {
+                                    colors.primary
+                                } else {
+                                    colors.text_muted
+                                })
+                                .size(14.0)
+                                .strong(),
+                            );
+                            ui.add_space(10.0);
+                            if ui
+                                .add(
+                                    secondary_button("或点击选择文件", colors)
+                                        .min_size([130.0, 32.0].into()),
+                                )
+                                .clicked()
+                            {
+                                if let Some(path) = FileDialog::new()
+                                    .add_filter("Encrust 加密文件", &["encrust"])
+                                    .pick_file()
+                                {
+                                    self.set_encrypted_input_path(path);
+                                }
+                            }
+                        }
+                    },
+                );
+            })
+            .response;
+
+        if self.encrypted_input_path.is_some() && drop_response.clicked() {
+            if let Some(path) = FileDialog::new()
+                .add_filter("Encrust 加密文件", &["encrust"])
+                .pick_file()
+            {
+                self.set_encrypted_input_path(path);
+            }
+        }
+
+        ui.add_space(16.0);
         self.render_decrypt_action(ui);
-        self.render_decrypt_result(ui, available_height);
-        ui.add_space(24.0);
+        self.render_decrypt_result(ui);
+        ui.add_space(20.0);
     }
 
     fn render_encrypt_input_tabs(&mut self, ui: &mut egui::Ui) {
-        ui.vertical(|ui| {
-            // 这里不用 `selectable_value` 的原因是：切换模式时除了修改模式，
-            // 还要同步更新默认输出路径。显式处理 clicked() 更适合教学和扩展。
-            if ui
-                .radio(self.encrypt_input_mode == EncryptInputMode::File, "文件")
-                .clicked()
-            {
-                self.encrypt_input_mode = EncryptInputMode::File;
-                if let Some(path) = &self.selected_file {
-                    self.encrypted_output_path = Some(io::default_file_output_path(path));
+        let colors = theme_colors(ui.ctx());
+        ui.horizontal(|ui| {
+            ui.spacing_mut().item_spacing.x = 0.0;
+            for (mode, label) in [
+                (EncryptInputMode::File, "文件"),
+                (EncryptInputMode::Text, "文本"),
+            ] {
+                let active = self.encrypt_input_mode == mode;
+                let text = egui::RichText::new(label)
+                    .size(13.0)
+                    .color(if active {
+                        colors.text_main
+                    } else {
+                        colors.text_muted
+                    })
+                    .strong();
+                let btn = egui::Button::new(text)
+                    .fill(if active {
+                        colors.surface_alt
+                    } else {
+                        egui::Color32::TRANSPARENT
+                    })
+                    .corner_radius(6)
+                    .stroke(egui::Stroke::NONE)
+                    .min_size([60.0, 30.0].into());
+                if ui.add(btn).clicked() {
+                    self.encrypt_input_mode = mode;
+                    match mode {
+                        EncryptInputMode::File => {
+                            if let Some(path) = &self.selected_file {
+                                self.encrypted_output_path =
+                                    Some(io::default_file_output_path(path));
+                            }
+                        }
+                        EncryptInputMode::Text => {
+                            self.encrypted_output_path = Some(io::default_text_output_path());
+                        }
+                    }
                 }
-            }
-
-            if ui
-                .radio(self.encrypt_input_mode == EncryptInputMode::Text, "文本")
-                .clicked()
-            {
-                self.encrypt_input_mode = EncryptInputMode::Text;
-                self.encrypted_output_path = Some(io::default_text_output_path());
             }
         });
     }
 
     fn render_file_encrypt_input(&mut self, ui: &mut egui::Ui) {
-        ui.heading("文件加密");
-        ui.label("将文件拖拽到窗口中，或通过系统文件选择器手动选择");
-        ui.add_space(12.0);
+        let colors = theme_colors(ui.ctx());
 
-        ui.group(|ui| {
-            ui.set_width(ui.available_width());
-            ui.label(egui::RichText::new("输入文件").strong());
-            ui.add_space(12.0);
-
-            if ui.button("选择文件").clicked() {
-                if let Some(path) = FileDialog::new().pick_file() {
-                    self.selected_file = Some(path.clone());
-                    self.encrypted_output_path = Some(io::default_file_output_path(&path));
-                    self.toast = None;
-                }
-            }
-
-            match &self.selected_file {
-                Some(path) => {
-                    path_display(ui, "已选择", &path.display().to_string());
-                }
-                None => {}
-            }
+        ui.horizontal(|ui| {
+            ui.label(
+                egui::RichText::new("文件加密")
+                    .size(20.0)
+                    .color(colors.text_main)
+                    .strong(),
+            );
         });
+        ui.add_space(6.0);
+        ui.label(
+            egui::RichText::new("将文件拖拽到窗口中，或通过系统文件选择器手动选择")
+                .color(colors.text_muted)
+                .size(13.0),
+        );
+        ui.add_space(16.0);
+
+        let drop_area_height = if self.selected_file.is_some() {
+            88.0
+        } else {
+            160.0
+        };
+        let drop_stroke = if self.drag_hovered {
+            egui::Stroke::new(2.0, colors.primary)
+        } else {
+            egui::Stroke::new(1.5, colors.border)
+        };
+        let drop_fill = if self.drag_hovered {
+            colors.primary_soft
+        } else {
+            colors.surface
+        };
+
+        let drop_response = egui::Frame::new()
+            .fill(drop_fill)
+            .stroke(drop_stroke)
+            .corner_radius(10)
+            .inner_margin(egui::Margin::same(16))
+            .show(ui, |ui| {
+                ui.set_width(ui.available_width());
+                ui.set_min_height(drop_area_height);
+                ui.with_layout(
+                    egui::Layout::top_down(egui::Align::Center)
+                        .with_main_align(egui::Align::Center),
+                    |ui| {
+                        if let Some(path) = &self.selected_file {
+                            ui.add_space(4.0);
+                            ui.label(
+                                egui::RichText::new("已选择文件")
+                                    .color(colors.text_muted)
+                                    .size(12.0),
+                            );
+                            ui.add_space(8.0);
+                            ui.label(
+                                egui::RichText::new(path.display().to_string())
+                                    .color(colors.text_main)
+                                    .size(14.0)
+                                    .strong(),
+                            );
+                        } else {
+                            let icon = if self.drag_hovered { "↓" } else { "📁" };
+                            ui.label(egui::RichText::new(icon).size(32.0).color(
+                                if self.drag_hovered {
+                                    colors.primary
+                                } else {
+                                    colors.text_muted
+                                },
+                            ));
+                            ui.add_space(8.0);
+                            ui.label(
+                                egui::RichText::new(if self.drag_hovered {
+                                    "释放以选择文件"
+                                } else {
+                                    "拖拽文件到此处"
+                                })
+                                .color(if self.drag_hovered {
+                                    colors.primary
+                                } else {
+                                    colors.text_muted
+                                })
+                                .size(14.0)
+                                .strong(),
+                            );
+                            ui.add_space(10.0);
+                            if ui
+                                .add(
+                                    secondary_button("或点击选择文件", colors)
+                                        .min_size([130.0, 32.0].into()),
+                                )
+                                .clicked()
+                            {
+                                if let Some(path) = FileDialog::new().pick_file() {
+                                    self.selected_file = Some(path.clone());
+                                    self.encrypted_output_path =
+                                        Some(io::default_file_output_path(&path));
+                                    self.toast = None;
+                                }
+                            }
+                        }
+                    },
+                );
+            })
+            .response;
+
+        if self.selected_file.is_some() && drop_response.clicked() {
+            if let Some(path) = FileDialog::new().pick_file() {
+                self.selected_file = Some(path.clone());
+                self.encrypted_output_path = Some(io::default_file_output_path(&path));
+                self.toast = None;
+            }
+        }
     }
 
-    fn render_text_encrypt_input(&mut self, ui: &mut egui::Ui, text_height: f32) {
-        ui.heading("文本加密");
-        ui.label("输入需要加密为 .encrust 文件的文本");
-        ui.add_space(12.0);
+    fn render_text_encrypt_input(&mut self, ui: &mut egui::Ui) {
+        let colors = theme_colors(ui.ctx());
 
-        ui.group(|ui| {
-            ui.set_width(ui.available_width());
-            ui.add_space(12.0);
-
-            scrollable_text_edit(ui, &mut self.text_input, text_height, "在这里输入文本...");
-
-            if self.encrypted_output_path.is_none() {
-                self.encrypted_output_path = Some(io::default_text_output_path());
-            }
+        ui.horizontal(|ui| {
+            ui.label(
+                egui::RichText::new("文本加密")
+                    .size(20.0)
+                    .color(colors.text_main)
+                    .strong(),
+            );
         });
+        ui.add_space(6.0);
+        ui.label(
+            egui::RichText::new("输入需要加密为 .encrust 文件的文本")
+                .color(colors.text_muted)
+                .size(13.0),
+        );
+        ui.add_space(16.0);
+
+        egui::Frame::new()
+            .fill(colors.surface)
+            .stroke(egui::Stroke::new(1.5, colors.border))
+            .corner_radius(10)
+            .inner_margin(egui::Margin::same(12))
+            .show(ui, |ui| {
+                ui.set_width(ui.available_width());
+                scrollable_text_edit(ui, &mut self.text_input, 180.0, "在这里输入文本...");
+            });
+
+        if self.encrypted_output_path.is_none() {
+            self.encrypted_output_path = Some(io::default_text_output_path());
+        }
     }
 
     fn render_passphrase_input(&mut self, ui: &mut egui::Ui) {
-        ui.label("密钥");
-        ui.add_space(10.0);
-        ui.add_sized(
-            [ui.available_width(), 34.0],
+        let colors = theme_colors(ui.ctx());
+
+        // 使用 TextEdit 自带 frame，通过 background_color 和 margin 控制外观。
+        // 显式设置 vertical_align::Center，确保 hint text 在内部 rect 中垂直居中。
+        ui.add(
             egui::TextEdit::singleline(&mut self.passphrase)
                 .password(true)
-                .hint_text("至少 8 个字符"),
+                .hint_text("至少 8 个字符")
+                .vertical_align(egui::Align::Center)
+                .margin(egui::Margin::symmetric(12, 11))
+                .background_color(colors.surface_alt)
+                .min_size(egui::vec2(ui.available_width(), 44.0))
+                .desired_width(ui.available_width()),
         );
 
         if !self.passphrase.is_empty() {
             if let Err(err) = crypto::validate_passphrase(&self.passphrase) {
-                ui.add_space(8.0);
-                ui.colored_label(theme_colors(ui.ctx()).error, err.to_string());
+                ui.add_space(6.0);
+                ui.label(
+                    egui::RichText::new(err.to_string())
+                        .color(colors.error)
+                        .size(12.0),
+                );
             }
         }
     }
 
     fn render_encrypted_output_picker(&mut self, ui: &mut egui::Ui) {
-        ui.group(|ui| {
-            ui.set_width(ui.available_width());
-            ui.label(egui::RichText::new("输出路径").strong());
-            ui.label("加密结果会保存为一个 .encrust 文件");
-            ui.add_space(12.0);
+        let colors = theme_colors(ui.ctx());
 
-            ui.horizontal_wrapped(|ui| {
-                let output_label = self
-                    .encrypted_output_path
-                    .as_ref()
-                    .map(|path| path.display().to_string())
-                    .unwrap_or_else(|| "".to_owned());
+        egui::Frame::new()
+            .fill(colors.surface)
+            .stroke(egui::Stroke::new(1.5, colors.border))
+            .corner_radius(10)
+            .inner_margin(egui::Margin::same(16))
+            .show(ui, |ui| {
+                ui.set_width(ui.available_width());
 
-                path_display(ui, "保存到", &output_label);
+                ui.horizontal(|ui| {
+                    ui.label(
+                        egui::RichText::new("输出路径")
+                            .color(colors.text_main)
+                            .strong(),
+                    );
+                });
+                ui.add_space(4.0);
+                ui.label(
+                    egui::RichText::new("加密结果会保存为一个 .encrust 文件")
+                        .color(colors.text_muted)
+                        .size(12.0),
+                );
+                ui.add_space(12.0);
 
-                if ui.button("另存为...").clicked() {
-                    let dialog = FileDialog::new().set_file_name("encrypted.encrust");
-                    if let Some(path) = dialog.save_file() {
-                        self.encrypted_output_path = Some(path);
-                        self.toast = None;
-                    }
-                }
+                ui.with_layout(
+                    egui::Layout::left_to_right(egui::Align::Center).with_main_wrap(true),
+                    |ui| {
+                        let output_label = self
+                            .encrypted_output_path
+                            .as_ref()
+                            .map(|path| path.display().to_string())
+                            .unwrap_or_else(|| "未选择保存路径".to_owned());
+
+                        path_display(ui, "保存到", &output_label, colors);
+
+                        if ui
+                            .add(
+                                secondary_button("另存为...", colors).min_size([90.0, 32.0].into()),
+                            )
+                            .clicked()
+                        {
+                            let dialog = FileDialog::new().set_file_name("encrypted.encrust");
+                            if let Some(path) = dialog.save_file() {
+                                self.encrypted_output_path = Some(path);
+                                self.toast = None;
+                            }
+                        }
+                    },
+                );
             });
-        });
     }
 
     fn render_encrypt_action(&mut self, ui: &mut egui::Ui) {
+        let colors = theme_colors(ui.ctx());
         let can_encrypt = self.can_encrypt();
 
-        if ui
-            .add_enabled(
-                can_encrypt,
-                egui::Button::new("加密并保存").min_size([132.0, 34.0].into()),
-            )
-            .clicked()
-        {
-            self.encrypt_active_input();
-        }
+        let btn = primary_button("加密并保存", colors).min_size([150.0, 42.0].into());
+
+        // 在水平布局中添加按钮，使按钮内部文字垂直居中
+        ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
+            if ui.add_enabled(can_encrypt, btn).clicked() {
+                self.encrypt_active_input();
+            }
+        });
     }
 
     fn render_decrypt_action(&mut self, ui: &mut egui::Ui) {
+        let colors = theme_colors(ui.ctx());
         let can_decrypt = self.encrypted_input_path.is_some()
             && crypto::validate_passphrase(&self.passphrase).is_ok();
 
-        if ui
-            .add_enabled(
-                can_decrypt,
-                egui::Button::new("解密").min_size([96.0, 34.0].into()),
-            )
-            .clicked()
-        {
+        let btn = primary_button("解密", colors).min_size([110.0, 42.0].into());
+
+        if ui.add_enabled(can_decrypt, btn).clicked() {
             self.decrypt_selected_file();
         }
     }
 
-    fn render_decrypt_result(&mut self, ui: &mut egui::Ui, _available_height: f32) {
+    fn render_decrypt_result(&mut self, ui: &mut egui::Ui) {
         if !self.decrypted_text.is_empty() {
+            ui.add_space(16.0);
+            let colors = theme_colors(ui.ctx());
+
+            egui::Frame::new()
+                .fill(colors.surface)
+                .stroke(egui::Stroke::new(1.5, colors.border))
+                .corner_radius(10)
+                .inner_margin(egui::Margin::same(16))
+                .show(ui, |ui| {
+                    ui.set_width(ui.available_width());
+                    ui.label(egui::RichText::new("解密后的文本").strong());
+                    ui.add_space(12.0);
+                    scrollable_text_edit(ui, &mut self.decrypted_text, 180.0, "");
+                });
+
             ui.add_space(12.0);
-            ui.group(|ui| {
-                ui.set_width(ui.available_width());
-                ui.label(egui::RichText::new("解密后的文本").strong());
-                ui.add_space(12.0);
-                let text_height = ui.available_height().clamp(180.0, 400.0);
-                scrollable_text_edit(ui, &mut self.decrypted_text, text_height, "");
-            });
-            ui.add_space(10.0);
-            if ui.button("复制文本").clicked() {
+            let copy_btn = primary_button("复制文本", colors).min_size([110.0, 40.0].into());
+            if ui.add(copy_btn).clicked() {
                 ui.ctx().copy_text(self.decrypted_text.clone());
                 self.clear_decrypt_inputs();
                 self.show_toast(Notice::Success("已复制解密后的文本".to_owned()));
@@ -435,43 +716,69 @@ impl EncrustApp {
         }
 
         if self.decrypted_file_bytes.is_some() {
-            ui.add_space(12.0);
-            ui.group(|ui| {
-                ui.set_width(ui.available_width());
-                ui.label(egui::RichText::new("解密后的文件").strong());
-                ui.label("解密内容已准备好，选择路径后保存");
-                ui.add_space(12.0);
+            ui.add_space(16.0);
+            let colors = theme_colors(ui.ctx());
 
-                if let Some(name) = &self.decrypted_file_name {
-                    path_display(ui, "原文件名", name);
-                }
+            egui::Frame::new()
+                .fill(colors.surface)
+                .stroke(egui::Stroke::new(1.5, colors.border))
+                .corner_radius(10)
+                .inner_margin(egui::Margin::same(16))
+                .show(ui, |ui| {
+                    ui.set_width(ui.available_width());
+                    ui.label(egui::RichText::new("解密后的文件").strong());
+                    ui.add_space(4.0);
+                    ui.label(
+                        egui::RichText::new("解密内容已准备好，选择路径后保存")
+                            .color(colors.text_muted)
+                            .size(12.0),
+                    );
+                    ui.add_space(12.0);
 
-                ui.horizontal_wrapped(|ui| {
-                    let output_label = self
-                        .decrypted_output_path
-                        .as_ref()
-                        .map(|path| path.display().to_string())
-                        .unwrap_or_else(|| "".to_owned());
-                    path_display(ui, "保存到", &output_label);
+                    if let Some(name) = &self.decrypted_file_name {
+                        path_display(ui, "原文件名", name, colors);
+                        ui.add_space(8.0);
+                    }
 
-                    if ui.button("另存为...").clicked() {
-                        let file_name = self
-                            .decrypted_file_name
-                            .clone()
-                            .unwrap_or_else(|| "decrypted-output".to_owned());
-                        if let Some(path) = FileDialog::new().set_file_name(&file_name).save_file()
-                        {
-                            self.decrypted_output_path = Some(path);
-                            self.toast = None;
-                        }
+                    ui.with_layout(
+                        egui::Layout::left_to_right(egui::Align::Center).with_main_wrap(true),
+                        |ui| {
+                            let output_label = self
+                                .decrypted_output_path
+                                .as_ref()
+                                .map(|path| path.display().to_string())
+                                .unwrap_or_else(|| "未选择保存路径".to_owned());
+                            path_display(ui, "保存到", &output_label, colors);
+
+                            if ui
+                                .add(
+                                    secondary_button("另存为...", colors)
+                                        .min_size([90.0, 32.0].into()),
+                                )
+                                .clicked()
+                            {
+                                let file_name = self
+                                    .decrypted_file_name
+                                    .clone()
+                                    .unwrap_or_else(|| "decrypted-output".to_owned());
+                                if let Some(path) =
+                                    FileDialog::new().set_file_name(&file_name).save_file()
+                                {
+                                    self.decrypted_output_path = Some(path);
+                                    self.toast = None;
+                                }
+                            }
+                        },
+                    );
+
+                    ui.add_space(12.0);
+                    let can_save = self.decrypted_output_path.is_some();
+                    let save_btn =
+                        primary_button("保存解密文件", colors).min_size([150.0, 40.0].into());
+                    if ui.add_enabled(can_save, save_btn).clicked() {
+                        self.save_decrypted_file();
                     }
                 });
-
-                ui.add_space(10.0);
-                if ui.button("保存解密文件").clicked() {
-                    self.save_decrypted_file();
-                }
-            });
         }
     }
 
@@ -486,21 +793,46 @@ impl EncrustApp {
         }
 
         let colors = theme_colors(ctx);
-        let (message, fill, stroke, text_color) = match &toast.notice {
-            Notice::Success(message) => {
-                (message, colors.success_bg, colors.success, colors.success)
-            }
-            Notice::Error(message) => (message, colors.error_bg, colors.error, colors.error),
+        let (message, fill, stroke, text_color, icon) = match &toast.notice {
+            Notice::Success(message) => (
+                message,
+                colors.success_bg,
+                colors.success,
+                colors.success,
+                "✓",
+            ),
+            Notice::Error(message) => (message, colors.error_bg, colors.error, colors.error, "✕"),
         };
 
+        let progress = 1.0 - (toast.created_at.elapsed().as_secs_f32() / 4.0).clamp(0.0, 1.0);
+
         egui::Area::new("toast".into())
-            .anchor(egui::Align2::CENTER_TOP, [0.0, 52.0])
+            .anchor(egui::Align2::CENTER_TOP, [0.0, 60.0])
             .interactable(false)
             .show(ctx, |ui| {
-                notice_frame(fill, stroke).show(ui, |ui| {
-                    ui.set_max_width(360.0);
-                    ui.label(egui::RichText::new(message).color(text_color).strong());
+                let response = notice_frame(fill, stroke).show(ui, |ui| {
+                    ui.set_max_width(400.0);
+                    ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                        ui.label(
+                            egui::RichText::new(icon)
+                                .size(16.0)
+                                .color(text_color)
+                                .strong(),
+                        );
+                        ui.add_space(8.0);
+                        ui.label(egui::RichText::new(message).color(text_color).strong());
+                    });
                 });
+                let rect = response.response.rect;
+                let bar_width = rect.width() * progress;
+                ui.painter().rect_filled(
+                    egui::Rect::from_min_max(
+                        egui::pos2(rect.left(), rect.bottom() - 2.5),
+                        egui::pos2(rect.left() + bar_width, rect.bottom()),
+                    ),
+                    0.0,
+                    text_color,
+                );
             });
 
         ctx.request_repaint_after(Duration::from_millis(250));
@@ -524,10 +856,6 @@ impl EncrustApp {
             && crypto::validate_passphrase(&self.passphrase).is_ok()
     }
 
-    /// 根据当前激活的加密输入模式读取明文、加密并写入输出路径。
-    ///
-    /// 这个函数故意返回 `()`，并把错误写入 toast。UI 事件处理函数通常
-    /// 不直接向上抛错，而是把结果转换成用户能看到的状态。
     fn encrypt_active_input(&mut self) {
         let result = self
             .load_active_plaintext()
@@ -669,10 +997,6 @@ impl EncrustApp {
         }
     }
 
-    /// 加密保存完成后清理界面状态。
-    ///
-    /// 这里会清掉密钥、文本和已选文件，避免用户离开电脑后界面还暴露输入内容。
-    /// 输出路径也一起清掉，因为它可能包含隐私目录或文件名。
     fn clear_encrypt_inputs(&mut self) {
         self.selected_file = None;
         self.text_input.clear();
@@ -680,9 +1004,6 @@ impl EncrustApp {
         self.encrypted_output_path = None;
     }
 
-    /// 解密流程结束后清理界面状态。
-    ///
-    /// 解密文本和解密文件 bytes 都属于敏感明文；保存或复制完成后应尽快从 UI 状态中移除。
     fn clear_decrypt_inputs(&mut self) {
         self.encrypted_input_path = None;
         self.decrypted_text.clear();
@@ -693,31 +1014,60 @@ impl EncrustApp {
     }
 }
 
-/// 统一设置 egui 的全局视觉参数。
-///
-/// egui 没有 CSS 这样的样式表，所以通常会在每一帧开始时调整 `Style`。
-/// 这些值控制控件间距、按钮内边距、输入框圆角等基础视觉语言。
+// ---------------------------------------------------------------------------
+// 全局样式
+// ---------------------------------------------------------------------------
+
 fn apply_app_style(ctx: &egui::Context) {
     ctx.set_theme(egui::ThemePreference::System);
     let mut style = (*ctx.style()).clone();
-    style.spacing.item_spacing = egui::vec2(10.0, 8.0);
+
+    // 间距系统
+    style.spacing.item_spacing = egui::vec2(12.0, 10.0);
     style.spacing.button_padding = egui::vec2(16.0, 8.0);
+
     let colors = theme_colors(ctx);
+
+    // 背景
     style.visuals.panel_fill = colors.app_bg;
     style.visuals.window_fill = colors.app_bg;
     style.visuals.extreme_bg_color = colors.surface_alt;
+
+    // 控件默认样式
     style.visuals.widgets.noninteractive.bg_fill = colors.surface;
-    style.visuals.widgets.inactive.bg_fill = colors.surface_alt;
-    style.visuals.widgets.hovered.bg_fill = colors.surface_alt;
-    style.visuals.widgets.active.bg_fill = colors.primary_soft;
-    style.visuals.widgets.inactive.fg_stroke.color = colors.text_main;
+    style.visuals.widgets.noninteractive.bg_stroke = egui::Stroke::new(1.0, colors.border);
     style.visuals.widgets.noninteractive.fg_stroke.color = colors.text_main;
-    style.visuals.widgets.noninteractive.corner_radius = 4.into();
-    style.visuals.widgets.inactive.corner_radius = 4.into();
-    style.visuals.widgets.hovered.corner_radius = 4.into();
-    style.visuals.widgets.active.corner_radius = 4.into();
+
+    style.visuals.widgets.inactive.bg_fill = colors.surface_alt;
+    style.visuals.widgets.inactive.bg_stroke = egui::Stroke::new(1.0, colors.border);
+    style.visuals.widgets.inactive.fg_stroke.color = colors.text_main;
+
+    style.visuals.widgets.hovered.bg_fill = colors.surface_alt;
+    style.visuals.widgets.hovered.bg_stroke = egui::Stroke::new(1.0, colors.border_hover);
+    style.visuals.widgets.hovered.fg_stroke.color = colors.text_main;
+
+    style.visuals.widgets.active.bg_fill = colors.primary_soft;
+    style.visuals.widgets.active.bg_stroke = egui::Stroke::new(1.0, colors.primary);
+    style.visuals.widgets.active.fg_stroke.color = colors.text_main;
+
+    // 统一圆角
+    let radius = egui::CornerRadius::same(8);
+    style.visuals.widgets.noninteractive.corner_radius = radius;
+    style.visuals.widgets.inactive.corner_radius = radius;
+    style.visuals.widgets.hovered.corner_radius = radius;
+    style.visuals.widgets.active.corner_radius = radius;
+
+    // 选中和高亮
+    style.visuals.selection.stroke = egui::Stroke::new(1.5, colors.primary);
+    style.visuals.selection.bg_fill = colors.primary_soft;
+    style.visuals.text_cursor.stroke = egui::Stroke::new(1.5, colors.primary);
+
     ctx.set_style(style);
 }
+
+// ---------------------------------------------------------------------------
+// 配色系统
+// ---------------------------------------------------------------------------
 
 #[derive(Clone, Copy)]
 struct ThemeColors {
@@ -725,9 +1075,12 @@ struct ThemeColors {
     surface: egui::Color32,
     surface_alt: egui::Color32,
     border: egui::Color32,
+    border_hover: egui::Color32,
+    primary: egui::Color32,
     primary_soft: egui::Color32,
     text_main: egui::Color32,
     text_muted: egui::Color32,
+    text_on_primary: egui::Color32,
     success: egui::Color32,
     success_bg: egui::Color32,
     error: egui::Color32,
@@ -739,13 +1092,16 @@ fn theme_colors(ctx: &egui::Context) -> ThemeColors {
 
     if visuals.dark_mode {
         ThemeColors {
-            app_bg: egui::Color32::from_rgb(24, 24, 27),
-            surface: egui::Color32::from_rgb(32, 33, 36),
-            surface_alt: egui::Color32::from_rgb(39, 39, 42),
-            border: egui::Color32::from_rgb(63, 63, 70),
-            primary_soft: egui::Color32::from_rgb(38, 46, 61),
-            text_main: egui::Color32::from_rgb(244, 244, 245),
-            text_muted: egui::Color32::from_rgb(161, 161, 170),
+            app_bg: egui::Color32::from_rgb(15, 17, 23),
+            surface: egui::Color32::from_rgb(24, 27, 35),
+            surface_alt: egui::Color32::from_rgb(32, 36, 46),
+            border: egui::Color32::from_rgb(42, 46, 58),
+            border_hover: egui::Color32::from_rgb(60, 65, 82),
+            primary: DARK_PRIMARY,
+            primary_soft: egui::Color32::from_rgb(30, 33, 55),
+            text_main: egui::Color32::from_rgb(226, 228, 233),
+            text_muted: egui::Color32::from_rgb(139, 146, 168),
+            text_on_primary: egui::Color32::from_rgb(255, 255, 255),
             success: DARK_SUCCESS,
             success_bg: DARK_SUCCESS_BG,
             error: DARK_ERROR,
@@ -753,13 +1109,16 @@ fn theme_colors(ctx: &egui::Context) -> ThemeColors {
         }
     } else {
         ThemeColors {
-            app_bg: egui::Color32::from_rgb(246, 247, 249),
+            app_bg: egui::Color32::from_rgb(248, 249, 252),
             surface: egui::Color32::from_rgb(255, 255, 255),
-            surface_alt: egui::Color32::from_rgb(242, 244, 247),
-            border: egui::Color32::from_rgb(214, 219, 227),
-            primary_soft: egui::Color32::from_rgb(239, 246, 255),
-            text_main: egui::Color32::from_rgb(17, 24, 39),
-            text_muted: egui::Color32::from_rgb(100, 116, 139),
+            surface_alt: egui::Color32::from_rgb(241, 243, 247),
+            border: egui::Color32::from_rgb(222, 226, 233),
+            border_hover: egui::Color32::from_rgb(190, 195, 205),
+            primary: PRIMARY,
+            primary_soft: egui::Color32::from_rgb(238, 240, 255),
+            text_main: egui::Color32::from_rgb(31, 35, 40),
+            text_muted: egui::Color32::from_rgb(107, 112, 123),
+            text_on_primary: egui::Color32::from_rgb(255, 255, 255),
             success: SUCCESS,
             success_bg: SUCCESS_BG,
             error: ERROR,
@@ -768,17 +1127,37 @@ fn theme_colors(ctx: &egui::Context) -> ThemeColors {
     }
 }
 
+// ---------------------------------------------------------------------------
+// UI 组件辅助函数
+// ---------------------------------------------------------------------------
+
+fn primary_button(text: &str, colors: ThemeColors) -> egui::Button<'static> {
+    egui::Button::new(
+        egui::RichText::new(text)
+            .color(colors.text_on_primary)
+            .strong(),
+    )
+    .fill(colors.primary)
+    .corner_radius(8)
+    .stroke(egui::Stroke::NONE)
+}
+
+fn secondary_button(text: &str, colors: ThemeColors) -> egui::Button<'static> {
+    egui::Button::new(egui::RichText::new(text).color(colors.text_main).size(13.0))
+        .fill(colors.surface_alt)
+        .corner_radius(6)
+        .stroke(egui::Stroke::new(1.0, colors.border))
+}
+
 fn notice_frame(fill: egui::Color32, stroke: egui::Color32) -> egui::Frame {
     egui::Frame::new()
         .fill(fill)
         .stroke(egui::Stroke::new(1.0, stroke))
-        .corner_radius(4)
-        .inner_margin(egui::Margin::same(14))
+        .corner_radius(8)
+        .inner_margin(egui::Margin::symmetric(16, 12))
 }
 
 fn scrollable_text_edit(ui: &mut egui::Ui, text: &mut String, height: f32, hint: &str) {
-    // 多行 TextEdit 会根据内容计算内部排版高度。把它包进固定高度的
-    // ScrollArea 后，长文本只会在这个区域内滚动，不会把整个表单撑高。
     egui::ScrollArea::vertical()
         .max_height(height)
         .min_scrolled_height(height)
@@ -788,36 +1167,53 @@ fn scrollable_text_edit(ui: &mut egui::Ui, text: &mut String, height: f32, hint:
                 [ui.available_width(), height],
                 egui::TextEdit::multiline(text)
                     .desired_width(f32::INFINITY)
-                    .hint_text(hint),
+                    .hint_text(hint)
+                    .margin(egui::Margin::symmetric(4, 4)),
             );
         });
 }
 
-fn path_display(ui: &mut egui::Ui, label: &str, value: &str) {
-    let colors = theme_colors(ui.ctx());
-
+fn path_display(ui: &mut egui::Ui, label: &str, value: &str, colors: ThemeColors) {
     egui::Frame::new()
         .fill(colors.surface_alt)
         .stroke(egui::Stroke::new(1.0, colors.border))
-        .corner_radius(4)
-        .inner_margin(egui::Margin::symmetric(12, 8))
+        .corner_radius(6)
+        .inner_margin(egui::Margin::symmetric(12, 9))
         .show(ui, |ui| {
-            ui.horizontal_wrapped(|ui| {
-                ui.label(egui::RichText::new(format!("{label}：")).color(colors.text_muted));
-                ui.label(egui::RichText::new(value).color(colors.text_main));
-            });
+            ui.with_layout(
+                egui::Layout::left_to_right(egui::Align::Center).with_main_wrap(true),
+                |ui| {
+                    ui.label(
+                        egui::RichText::new(format!("{label}："))
+                            .color(colors.text_muted)
+                            .size(13.0),
+                    );
+                    ui.label(
+                        egui::RichText::new(value)
+                            .color(colors.text_main)
+                            .size(13.0),
+                    );
+                },
+            );
         });
 }
 
-// fn empty_state(ui: &mut egui::Ui, text: &str) {
-//     let colors = theme_colors(ui.ctx());
-
-//     egui::Frame::new()
-//         .fill(colors.surface_alt)
-//         .stroke(egui::Stroke::new(1.0, colors.border))
-//         .corner_radius(4)
-//         .inner_margin(egui::Margin::symmetric(12, 10))
-//         .show(ui, |ui| {
-//             ui.label(egui::RichText::new(text).color(colors.text_muted));
-//         });
-// }
+fn sidebar_card(ui: &mut egui::Ui, title: &str, content: impl FnOnce(&mut egui::Ui)) {
+    let colors = theme_colors(ui.ctx());
+    egui::Frame::new()
+        .fill(colors.surface)
+        .stroke(egui::Stroke::new(1.5, colors.border))
+        .corner_radius(10)
+        .inner_margin(egui::Margin::same(14))
+        .show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            ui.label(
+                egui::RichText::new(title)
+                    .size(12.0)
+                    .color(colors.text_muted)
+                    .strong(),
+            );
+            ui.add_space(10.0);
+            content(ui);
+        });
+}
