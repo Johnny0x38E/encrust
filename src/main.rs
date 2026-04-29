@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use eframe::egui::{FontData, FontDefinitions, FontFamily};
+use eframe::egui::{FontData, FontDefinitions, FontFamily, FontTweak};
 
 mod app;
 mod crypto;
@@ -46,7 +46,12 @@ fn configure_fonts(ctx: &eframe::egui::Context) {
     {
         fonts.font_data.insert(
             "cjk-fallback".to_owned(),
-            Arc::new(FontData::from_owned(font_bytes)),
+            Arc::new(FontData::from_owned(font_bytes).tweak(FontTweak {
+                // CJK 字体 ascent 较大，视觉上偏上；
+                // 通过向下偏移让文字在按钮、输入框中更接近垂直居中。
+                y_offset_factor: 0.18,
+                ..Default::default()
+            })),
         );
 
         if let Some(family) = fonts.families.get_mut(&FontFamily::Proportional) {
