@@ -40,8 +40,14 @@ fn configure_fonts(ctx: &eframe::egui::Context) {
         "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
     ];
 
-    if let Some(font_bytes) = font_candidates.iter().find_map(|path| std::fs::read(path).ok()) {
-        fonts.font_data.insert("cjk-fallback".to_owned(), Arc::new(FontData::from_owned(font_bytes)));
+    if let Some(font_bytes) = font_candidates
+        .iter()
+        .find_map(|path| std::fs::read(path).ok())
+    {
+        fonts.font_data.insert(
+            "cjk-fallback".to_owned(),
+            Arc::new(FontData::from_owned(font_bytes)),
+        );
 
         if let Some(family) = fonts.families.get_mut(&FontFamily::Proportional) {
             family.insert(0, "cjk-fallback".to_owned());

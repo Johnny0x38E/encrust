@@ -72,7 +72,6 @@ pub enum CryptoError {
 /// 用于 UI 层做轻量校验。
 ///
 /// 这里按 Unicode 字符数量检查，而不是按字节数检查。这样中文、emoji 等输入
-/// 对用户来说更符合“字符长度”的直觉。
 pub fn validate_passphrase(passphrase: &str) -> Result<(), CryptoError> {
     if passphrase.chars().count() < MIN_PASSPHRASE_CHARS {
         return Err(CryptoError::PassphraseTooShort);
@@ -83,9 +82,13 @@ pub fn validate_passphrase(passphrase: &str) -> Result<(), CryptoError> {
 
 /// 加密任意 bytes，并返回完整的 `.encrust` 文件内容。
 ///
-/// 文件加密和文本加密都会调用这个函数。这样 UI 不需要关心密码学细节，
-/// 测试也可以直接覆盖核心逻辑。
-pub fn encrypt_bytes(plaintext: &[u8], passphrase: &str, kind: ContentKind, file_name: Option<&str>) -> Result<Vec<u8>, CryptoError> {
+/// 文件加密和文本加密都会调用这个函数。
+pub fn encrypt_bytes(
+    plaintext: &[u8],
+    passphrase: &str,
+    kind: ContentKind,
+    file_name: Option<&str>,
+) -> Result<Vec<u8>, CryptoError> {
     validate_passphrase(passphrase)?;
 
     let mut salt = [0_u8; SALT_LEN];
@@ -99,10 +102,17 @@ pub fn encrypt_bytes(plaintext: &[u8], passphrase: &str, kind: ContentKind, file
     let cipher = Aes256Gcm::new_from_slice(key.as_slice()).map_err(|_| CryptoError::Encryption)?;
     let nonce = Nonce::from_slice(&nonce_bytes);
     let header = build_header(kind, file_name, &salt, &nonce_bytes)?;
-    let ciphertext = cipher.encrypt(nonce, Payload { msg: plaintext, aad: &header }).map_err(|_| CryptoError::Encryption)?;
+    let ciphertext = cipher
+        .encrypt(
+            nonce,
+            Payload {
+                msg: plaintext,
+                aad: &header,
+            },
+        )
+        .map_err(|_| CryptoError::Encryption)?;
 
     // 提前分配容量，避免 Vec 在 push/extend 时多次扩容。这里不是性能关键，
-    // 但这是 Rust 中处理二进制格式时常见的写法。
     let mut output = Vec::with_capacity(header.len() + ciphertext.len());
     output.extend_from_slice(&header);
     output.extend_from_slice(&ciphertext);
@@ -115,7 +125,10 @@ pub fn encrypt_bytes(plaintext: &[u8], passphrase: &str, kind: ContentKind, file
 /// 返回值包含内容类型和明文 bytes。UI 层再根据 `ContentKind` 决定：
 /// - Text：按 UTF-8 展示并提供复制。
 /// - File：提供保存到文件路径的功能。
-pub fn decrypt_bytes(encrypted_file: &[u8], passphrase: &str) -> Result<DecryptedPayload, CryptoError> {
+pub fn decrypt_bytes(
+    encrypted_file: &[u8],
+    passphrase: &str,
+) -> Result<DecryptedPayload, CryptoError> {
     validate_passphrase(passphrase)?;
 
     let parsed = parse_header(encrypted_file)?;
@@ -123,19 +136,36 @@ pub fn decrypt_bytes(encrypted_file: &[u8], passphrase: &str) -> Result<Decrypte
     let cipher = Aes256Gcm::new_from_slice(key.as_slice()).map_err(|_| CryptoError::Decryption)?;
     let nonce = Nonce::from_slice(&parsed.nonce);
     let ciphertext = &encrypted_file[parsed.header_len..];
-    let plaintext =
-        cipher.decrypt(nonce, Payload { msg: ciphertext, aad: &encrypted_file[..parsed.header_len] }).map_err(|_| CryptoError::Decryption)?;
+    let plaintext = cipher
+        .decrypt(
+            nonce,
+            Payload {
+                msg: ciphertext,
+                aad: &encrypted_file[..parsed.header_len],
+            },
+        )
+        .map_err(|_| CryptoError::Decryption)?;
 
-    Ok(DecryptedPayload { kind: parsed.kind, file_name: parsed.file_name, plaintext })
+    Ok(DecryptedPayload {
+        kind: parsed.kind,
+        file_name: parsed.file_name,
+        plaintext,
+    })
 }
 
-fn build_header(kind: ContentKind, file_name: Option<&str>, salt: &[u8; SALT_LEN], nonce_bytes: &[u8; NONCE_LEN]) -> Result<Vec<u8>, CryptoError> {
+fn build_header(
+    kind: ContentKind,
+    file_name: Option<&str>,
+    salt: &[u8; SALT_LEN],
+    nonce_bytes: &[u8; NONCE_LEN],
+) -> Result<Vec<u8>, CryptoError> {
     let kind_byte = match kind {
         ContentKind::File => CONTENT_FILE,
         ContentKind::Text => CONTENT_TEXT,
     };
     let file_name_bytes = file_name.unwrap_or_default().as_bytes();
-    let file_name_len = u16::try_from(file_name_bytes.len()).map_err(|_| CryptoError::FileNameTooLong)?;
+    let file_name_len =
+        u16::try_from(file_name_bytes.len()).map_err(|_| CryptoError::FileNameTooLong)?;
 
     let mut output = Vec::with_capacity(MIN_HEADER_LEN + file_name_bytes.len());
     output.extend_from_slice(MAGIC);
@@ -184,8 +214,11 @@ fn parse_header(input: &[u8]) -> Result<ParsedHeader, CryptoError> {
 
     let file_name_len = read_u16(input, &mut cursor)? as usize;
     let file_name_bytes = read_slice(input, &mut cursor, file_name_len)?;
-    let file_name =
-        if file_name_bytes.is_empty() { None } else { Some(String::from_utf8(file_name_bytes.to_vec()).map_err(|_| CryptoError::InvalidFormat)?) };
+    let file_name = if file_name_bytes.is_empty() {
+        None
+    } else {
+        Some(String::from_utf8(file_name_bytes.to_vec()).map_err(|_| CryptoError::InvalidFormat)?)
+    };
 
     let salt = read_array::<SALT_LEN>(input, &mut cursor)?;
     let nonce = read_array::<NONCE_LEN>(input, &mut cursor)?;
@@ -194,7 +227,13 @@ fn parse_header(input: &[u8]) -> Result<ParsedHeader, CryptoError> {
         return Err(CryptoError::InvalidFormat);
     }
 
-    Ok(ParsedHeader { kind, file_name, salt, nonce, header_len: cursor })
+    Ok(ParsedHeader {
+        kind,
+        file_name,
+        salt,
+        nonce,
+        header_len: cursor,
+    })
 }
 
 fn read_u8(input: &[u8], cursor: &mut usize) -> Result<u8, CryptoError> {
@@ -215,7 +254,11 @@ fn read_array<const N: usize>(input: &[u8], cursor: &mut usize) -> Result<[u8; N
     Ok(array)
 }
 
-fn read_slice<'a>(input: &'a [u8], cursor: &mut usize, len: usize) -> Result<&'a [u8], CryptoError> {
+fn read_slice<'a>(
+    input: &'a [u8],
+    cursor: &mut usize,
+    len: usize,
+) -> Result<&'a [u8], CryptoError> {
     let end = cursor.checked_add(len).ok_or(CryptoError::InvalidFormat)?;
     let slice = input.get(*cursor..end).ok_or(CryptoError::InvalidFormat)?;
     *cursor = end;
@@ -226,14 +269,18 @@ fn read_slice<'a>(input: &'a [u8], cursor: &mut usize, len: usize) -> Result<&'a
 ///
 /// 用户输入通常不适合直接作为加密 key：长度不固定，熵也不可控。
 /// KDF 的职责是把用户输入和随机 salt 转换成固定长度、抗暴力破解成本更高的 key。
-fn derive_key(passphrase: &str, salt: &[u8; SALT_LEN]) -> Result<Zeroizing<[u8; KEY_LEN]>, CryptoError> {
-    // 这些参数面向桌面学习项目，兼顾安全性和本机响应速度。
-    // 当前通过 VERSION 固定参数；未来如果要调参，应升级文件格式版本。
-    let params = Params::new(19 * 1024, 2, 1, Some(KEY_LEN)).map_err(|_| CryptoError::KeyDerivation)?;
+fn derive_key(
+    passphrase: &str,
+    salt: &[u8; SALT_LEN],
+) -> Result<Zeroizing<[u8; KEY_LEN]>, CryptoError> {
+    let params =
+        Params::new(19 * 1024, 2, 1, Some(KEY_LEN)).map_err(|_| CryptoError::KeyDerivation)?;
     let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, params);
 
     let mut key = Zeroizing::new([0_u8; KEY_LEN]);
-    argon2.hash_password_into(passphrase.as_bytes(), salt, key.as_mut()).map_err(|_| CryptoError::KeyDerivation)?;
+    argon2
+        .hash_password_into(passphrase.as_bytes(), salt, key.as_mut())
+        .map_err(|_| CryptoError::KeyDerivation)?;
 
     Ok(key)
 }
@@ -244,13 +291,20 @@ mod tests {
 
     #[test]
     fn rejects_short_passphrase() {
-        let err = encrypt_bytes(b"hello", "short", ContentKind::Text, None).expect_err("short passphrase must fail");
+        let err = encrypt_bytes(b"hello", "short", ContentKind::Text, None)
+            .expect_err("short passphrase must fail");
         assert!(matches!(err, CryptoError::PassphraseTooShort));
     }
 
     #[test]
     fn output_starts_with_expected_header_fields() {
-        let encrypted = encrypt_bytes(b"hello", "correct horse battery staple", ContentKind::Text, None).unwrap();
+        let encrypted = encrypt_bytes(
+            b"hello",
+            "correct horse battery staple",
+            ContentKind::Text,
+            None,
+        )
+        .unwrap();
 
         assert_eq!(&encrypted[..MAGIC.len()], MAGIC);
         assert_eq!(encrypted[MAGIC.len()], VERSION);
@@ -262,8 +316,20 @@ mod tests {
 
     #[test]
     fn same_plaintext_encrypts_to_different_outputs() {
-        let first = encrypt_bytes(b"repeatable input", "correct horse battery staple", ContentKind::Text, None).unwrap();
-        let second = encrypt_bytes(b"repeatable input", "correct horse battery staple", ContentKind::Text, None).unwrap();
+        let first = encrypt_bytes(
+            b"repeatable input",
+            "correct horse battery staple",
+            ContentKind::Text,
+            None,
+        )
+        .unwrap();
+        let second = encrypt_bytes(
+            b"repeatable input",
+            "correct horse battery staple",
+            ContentKind::Text,
+            None,
+        )
+        .unwrap();
 
         // salt 和 nonce 每次都随机，所以完整输出不应相同。
         assert_ne!(first, second);
@@ -274,13 +340,35 @@ mod tests {
         let binary = [0_u8, 159, 146, 150, 255, 10];
         let text = "你好，Rust encryption!";
 
-        assert!(encrypt_bytes(&binary, "correct horse battery staple", ContentKind::File, Some("sample.bin"),).is_ok());
-        assert!(encrypt_bytes(text.as_bytes(), "correct horse battery staple", ContentKind::Text, None,).is_ok());
+        assert!(
+            encrypt_bytes(
+                &binary,
+                "correct horse battery staple",
+                ContentKind::File,
+                Some("sample.bin"),
+            )
+            .is_ok()
+        );
+        assert!(
+            encrypt_bytes(
+                text.as_bytes(),
+                "correct horse battery staple",
+                ContentKind::Text,
+                None,
+            )
+            .is_ok()
+        );
     }
 
     #[test]
     fn decrypts_text_payload() {
-        let encrypted = encrypt_bytes("hello rust".as_bytes(), "correct horse battery staple", ContentKind::Text, None).unwrap();
+        let encrypted = encrypt_bytes(
+            "hello rust".as_bytes(),
+            "correct horse battery staple",
+            ContentKind::Text,
+            None,
+        )
+        .unwrap();
 
         let decrypted = decrypt_bytes(&encrypted, "correct horse battery staple").unwrap();
 
@@ -290,7 +378,13 @@ mod tests {
 
     #[test]
     fn decrypts_file_payload_with_original_name() {
-        let encrypted = encrypt_bytes(b"file bytes", "correct horse battery staple", ContentKind::File, Some("report.pdf")).unwrap();
+        let encrypted = encrypt_bytes(
+            b"file bytes",
+            "correct horse battery staple",
+            ContentKind::File,
+            Some("report.pdf"),
+        )
+        .unwrap();
 
         let decrypted = decrypt_bytes(&encrypted, "correct horse battery staple").unwrap();
 
@@ -301,7 +395,13 @@ mod tests {
 
     #[test]
     fn decrypt_rejects_wrong_passphrase() {
-        let encrypted = encrypt_bytes(b"secret", "correct horse battery staple", ContentKind::Text, None).unwrap();
+        let encrypted = encrypt_bytes(
+            b"secret",
+            "correct horse battery staple",
+            ContentKind::Text,
+            None,
+        )
+        .unwrap();
 
         let err = decrypt_bytes(&encrypted, "wrong horse battery staple").unwrap_err();
 

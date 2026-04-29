@@ -1,3 +1,10 @@
 /target
+.zed/
+.vscode/
+.idea/
+.agents/
 .claude/
+.zread/
 DEVELOPMENT_PLAN.md
+CLAUDE.md
+AGENTS.md

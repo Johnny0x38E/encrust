@@ -102,13 +102,24 @@ impl eframe::App for EncrustApp {
                     ui.add_space(8.0);
                     ui.spacing_mut().item_spacing.x = 0.0;
 
-                    for (mode, label) in [(OperationMode::Encrypt, "加密"), (OperationMode::Decrypt, "解密")] {
+                    for (mode, label) in [
+                        (OperationMode::Encrypt, "加密"),
+                        (OperationMode::Decrypt, "解密"),
+                    ] {
                         let active = self.operation_mode == mode;
                         let resp = ui.add_sized(
                             [72.0, 36.0],
-                            egui::Label::new(egui::RichText::new(label).color(if active { colors.text_main } else { colors.text_muted }).strong())
-                                .selectable(false)
-                                .sense(egui::Sense::click()),
+                            egui::Label::new(
+                                egui::RichText::new(label)
+                                    .color(if active {
+                                        colors.text_main
+                                    } else {
+                                        colors.text_muted
+                                    })
+                                    .strong(),
+                            )
+                            .selectable(false)
+                            .sense(egui::Sense::click()),
                         );
                         if resp.clicked() {
                             self.set_operation_mode(mode);
@@ -120,7 +131,10 @@ impl eframe::App for EncrustApp {
                             let bar_width = 28.0;
                             let bar_x = rect.center().x - bar_width / 2.0;
                             ui.painter().rect_filled(
-                                egui::Rect::from_min_max(egui::pos2(bar_x, bar_y - bar_height), egui::pos2(bar_x + bar_width, bar_y)),
+                                egui::Rect::from_min_max(
+                                    egui::pos2(bar_x, bar_y - bar_height),
+                                    egui::pos2(bar_x + bar_width, bar_y),
+                                ),
                                 0.0,
                                 colors.text_main,
                             );
@@ -129,21 +143,26 @@ impl eframe::App for EncrustApp {
                 });
             });
 
-        egui::SidePanel::left("settings").resizable(false).exact_width(side_width).show(ctx, |ui| {
-            ui.add_space(14.0);
-            ui.horizontal(|ui| {
-                ui.add_space(16.0);
-                ui.vertical(|ui| {
-                    ui.set_width((side_width - 32.0).max(180.0));
-                    self.render_sidebar(ui);
+        egui::SidePanel::left("settings")
+            .resizable(false)
+            .exact_width(side_width)
+            .show(ctx, |ui| {
+                ui.add_space(14.0);
+                ui.horizontal(|ui| {
+                    ui.add_space(16.0);
+                    ui.vertical(|ui| {
+                        ui.set_width((side_width - 32.0).max(180.0));
+                        self.render_sidebar(ui);
+                    });
                 });
             });
-        });
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.add_space(18.0);
             let horizontal_padding = 18.0;
-            let content_width = (ui.available_width() - horizontal_padding * 2.0).max(320.0).min(760.0);
+            let content_width = (ui.available_width() - horizontal_padding * 2.0)
+                .max(320.0)
+                .min(760.0);
             let content_height = (ui.available_height() - 18.0).max(360.0);
 
             ui.horizontal(|ui| {
@@ -233,7 +252,10 @@ impl EncrustApp {
             ui.add_space(12.0);
 
             if ui.button("选择加密文件").clicked() {
-                if let Some(path) = FileDialog::new().add_filter("Encrust 加密文件", &["encrust"]).pick_file() {
+                if let Some(path) = FileDialog::new()
+                    .add_filter("Encrust 加密文件", &["encrust"])
+                    .pick_file()
+                {
                     self.set_encrypted_input_path(path);
                 }
             }
@@ -256,14 +278,20 @@ impl EncrustApp {
         ui.vertical(|ui| {
             // 这里不用 `selectable_value` 的原因是：切换模式时除了修改模式，
             // 还要同步更新默认输出路径。显式处理 clicked() 更适合教学和扩展。
-            if ui.radio(self.encrypt_input_mode == EncryptInputMode::File, "文件").clicked() {
+            if ui
+                .radio(self.encrypt_input_mode == EncryptInputMode::File, "文件")
+                .clicked()
+            {
                 self.encrypt_input_mode = EncryptInputMode::File;
                 if let Some(path) = &self.selected_file {
                     self.encrypted_output_path = Some(io::default_file_output_path(path));
                 }
             }
 
-            if ui.radio(self.encrypt_input_mode == EncryptInputMode::Text, "文本").clicked() {
+            if ui
+                .radio(self.encrypt_input_mode == EncryptInputMode::Text, "文本")
+                .clicked()
+            {
                 self.encrypt_input_mode = EncryptInputMode::Text;
                 self.encrypted_output_path = Some(io::default_text_output_path());
             }
@@ -317,7 +345,12 @@ impl EncrustApp {
     fn render_passphrase_input(&mut self, ui: &mut egui::Ui) {
         ui.label("密钥");
         ui.add_space(10.0);
-        ui.add_sized([ui.available_width(), 34.0], egui::TextEdit::singleline(&mut self.passphrase).password(true).hint_text("至少 8 个字符"));
+        ui.add_sized(
+            [ui.available_width(), 34.0],
+            egui::TextEdit::singleline(&mut self.passphrase)
+                .password(true)
+                .hint_text("至少 8 个字符"),
+        );
 
         if !self.passphrase.is_empty() {
             if let Err(err) = crypto::validate_passphrase(&self.passphrase) {
@@ -335,7 +368,11 @@ impl EncrustApp {
             ui.add_space(12.0);
 
             ui.horizontal_wrapped(|ui| {
-                let output_label = self.encrypted_output_path.as_ref().map(|path| path.display().to_string()).unwrap_or_else(|| "".to_owned());
+                let output_label = self
+                    .encrypted_output_path
+                    .as_ref()
+                    .map(|path| path.display().to_string())
+                    .unwrap_or_else(|| "".to_owned());
 
                 path_display(ui, "保存到", &output_label);
 
@@ -353,15 +390,28 @@ impl EncrustApp {
     fn render_encrypt_action(&mut self, ui: &mut egui::Ui) {
         let can_encrypt = self.can_encrypt();
 
-        if ui.add_enabled(can_encrypt, egui::Button::new("加密并保存").min_size([132.0, 34.0].into())).clicked() {
+        if ui
+            .add_enabled(
+                can_encrypt,
+                egui::Button::new("加密并保存").min_size([132.0, 34.0].into()),
+            )
+            .clicked()
+        {
             self.encrypt_active_input();
         }
     }
 
     fn render_decrypt_action(&mut self, ui: &mut egui::Ui) {
-        let can_decrypt = self.encrypted_input_path.is_some() && crypto::validate_passphrase(&self.passphrase).is_ok();
+        let can_decrypt = self.encrypted_input_path.is_some()
+            && crypto::validate_passphrase(&self.passphrase).is_ok();
 
-        if ui.add_enabled(can_decrypt, egui::Button::new("解密").min_size([96.0, 34.0].into())).clicked() {
+        if ui
+            .add_enabled(
+                can_decrypt,
+                egui::Button::new("解密").min_size([96.0, 34.0].into()),
+            )
+            .clicked()
+        {
             self.decrypt_selected_file();
         }
     }
@@ -397,12 +447,20 @@ impl EncrustApp {
                 }
 
                 ui.horizontal_wrapped(|ui| {
-                    let output_label = self.decrypted_output_path.as_ref().map(|path| path.display().to_string()).unwrap_or_else(|| "".to_owned());
+                    let output_label = self
+                        .decrypted_output_path
+                        .as_ref()
+                        .map(|path| path.display().to_string())
+                        .unwrap_or_else(|| "".to_owned());
                     path_display(ui, "保存到", &output_label);
 
                     if ui.button("另存为...").clicked() {
-                        let file_name = self.decrypted_file_name.clone().unwrap_or_else(|| "decrypted-output".to_owned());
-                        if let Some(path) = FileDialog::new().set_file_name(&file_name).save_file() {
+                        let file_name = self
+                            .decrypted_file_name
+                            .clone()
+                            .unwrap_or_else(|| "decrypted-output".to_owned());
+                        if let Some(path) = FileDialog::new().set_file_name(&file_name).save_file()
+                        {
                             self.decrypted_output_path = Some(path);
                             self.toast = None;
                         }
@@ -429,22 +487,30 @@ impl EncrustApp {
 
         let colors = theme_colors(ctx);
         let (message, fill, stroke, text_color) = match &toast.notice {
-            Notice::Success(message) => (message, colors.success_bg, colors.success, colors.success),
+            Notice::Success(message) => {
+                (message, colors.success_bg, colors.success, colors.success)
+            }
             Notice::Error(message) => (message, colors.error_bg, colors.error, colors.error),
         };
 
-        egui::Area::new("toast".into()).anchor(egui::Align2::CENTER_TOP, [0.0, 52.0]).interactable(false).show(ctx, |ui| {
-            notice_frame(fill, stroke).show(ui, |ui| {
-                ui.set_max_width(360.0);
-                ui.label(egui::RichText::new(message).color(text_color).strong());
+        egui::Area::new("toast".into())
+            .anchor(egui::Align2::CENTER_TOP, [0.0, 52.0])
+            .interactable(false)
+            .show(ctx, |ui| {
+                notice_frame(fill, stroke).show(ui, |ui| {
+                    ui.set_max_width(360.0);
+                    ui.label(egui::RichText::new(message).color(text_color).strong());
+                });
             });
-        });
 
         ctx.request_repaint_after(Duration::from_millis(250));
     }
 
     fn show_toast(&mut self, notice: Notice) {
-        self.toast = Some(Toast { notice, created_at: Instant::now() });
+        self.toast = Some(Toast {
+            notice,
+            created_at: Instant::now(),
+        });
     }
 
     fn can_encrypt(&self) -> bool {
@@ -453,7 +519,9 @@ impl EncrustApp {
             EncryptInputMode::Text => !self.text_input.trim().is_empty(),
         };
 
-        has_valid_input && self.encrypted_output_path.is_some() && crypto::validate_passphrase(&self.passphrase).is_ok()
+        has_valid_input
+            && self.encrypted_output_path.is_some()
+            && crypto::validate_passphrase(&self.passphrase).is_ok()
     }
 
     /// 根据当前激活的加密输入模式读取明文、加密并写入输出路径。
@@ -464,11 +532,16 @@ impl EncrustApp {
         let result = self
             .load_active_plaintext()
             .and_then(|(plaintext, kind, file_name)| {
-                crypto::encrypt_bytes(&plaintext, &self.passphrase, kind, file_name.as_deref()).map_err(|err| err.to_string())
+                crypto::encrypt_bytes(&plaintext, &self.passphrase, kind, file_name.as_deref())
+                    .map_err(|err| err.to_string())
             })
             .and_then(|encrypted| {
-                let output_path = self.encrypted_output_path.clone().ok_or_else(|| "请选择保存路径".to_owned())?;
-                io::write_file(&output_path, &encrypted).map_err(|err| format!("保存失败：{err}"))?;
+                let output_path = self
+                    .encrypted_output_path
+                    .clone()
+                    .ok_or_else(|| "请选择保存路径".to_owned())?;
+                io::write_file(&output_path, &encrypted)
+                    .map_err(|err| format!("保存失败：{err}"))?;
                 Ok(output_path)
             });
 
@@ -488,9 +561,15 @@ impl EncrustApp {
             .encrypted_input_path
             .as_ref()
             .ok_or_else(|| "请选择要解密的 .encrust 文件".to_owned())
-            .and_then(|path| io::read_file(path).map(|bytes| (path.clone(), bytes)).map_err(|err| format!("读取加密文件失败：{err}")))
+            .and_then(|path| {
+                io::read_file(path)
+                    .map(|bytes| (path.clone(), bytes))
+                    .map_err(|err| format!("读取加密文件失败：{err}"))
+            })
             .and_then(|(path, encrypted)| {
-                crypto::decrypt_bytes(&encrypted, &self.passphrase).map(|payload| (path, payload)).map_err(|err| err.to_string())
+                crypto::decrypt_bytes(&encrypted, &self.passphrase)
+                    .map(|payload| (path, payload))
+                    .map_err(|err| err.to_string())
             });
 
         match result {
@@ -500,11 +579,19 @@ impl EncrustApp {
     }
 
     fn save_decrypted_file(&mut self) {
-        let result = self.decrypted_file_bytes.as_ref().ok_or_else(|| "没有可保存的解密文件".to_owned()).and_then(|bytes| {
-            let output_path = self.decrypted_output_path.clone().ok_or_else(|| "请选择解密文件保存路径".to_owned())?;
-            io::write_file(&output_path, bytes).map_err(|err| format!("保存解密文件失败：{err}"))?;
-            Ok(output_path)
-        });
+        let result = self
+            .decrypted_file_bytes
+            .as_ref()
+            .ok_or_else(|| "没有可保存的解密文件".to_owned())
+            .and_then(|bytes| {
+                let output_path = self
+                    .decrypted_output_path
+                    .clone()
+                    .ok_or_else(|| "请选择解密文件保存路径".to_owned())?;
+                io::write_file(&output_path, bytes)
+                    .map_err(|err| format!("保存解密文件失败：{err}"))?;
+                Ok(output_path)
+            });
 
         let notice = match result {
             Ok(path) => {
@@ -520,9 +607,15 @@ impl EncrustApp {
     fn load_active_plaintext(&self) -> Result<(Vec<u8>, ContentKind, Option<String>), String> {
         match self.encrypt_input_mode {
             EncryptInputMode::File => {
-                let path = self.selected_file.as_ref().ok_or_else(|| "请选择要加密的文件".to_owned())?;
+                let path = self
+                    .selected_file
+                    .as_ref()
+                    .ok_or_else(|| "请选择要加密的文件".to_owned())?;
                 let bytes = io::read_file(path).map_err(|err| format!("读取文件失败：{err}"))?;
-                let file_name = path.file_name().and_then(|name| name.to_str()).map(ToOwned::to_owned);
+                let file_name = path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .map(ToOwned::to_owned);
                 Ok((bytes, ContentKind::File, file_name))
             }
             EncryptInputMode::Text => {
@@ -558,11 +651,16 @@ impl EncrustApp {
                     self.show_toast(Notice::Success("文本解密成功".to_owned()));
                 }
                 Err(_) => {
-                    self.show_toast(Notice::Error("解密成功，但内容不是有效的 UTF-8 文本".to_owned()));
+                    self.show_toast(Notice::Error(
+                        "解密成功，但内容不是有效的 UTF-8 文本".to_owned(),
+                    ));
                 }
             },
             ContentKind::File => {
-                self.decrypted_output_path = Some(io::default_decrypted_output_path(&encrypted_path, payload.file_name.as_deref()));
+                self.decrypted_output_path = Some(io::default_decrypted_output_path(
+                    &encrypted_path,
+                    payload.file_name.as_deref(),
+                ));
                 self.decrypted_file_name = payload.file_name;
                 self.decrypted_file_bytes = Some(payload.plaintext);
                 self.passphrase.clear();
@@ -671,15 +769,28 @@ fn theme_colors(ctx: &egui::Context) -> ThemeColors {
 }
 
 fn notice_frame(fill: egui::Color32, stroke: egui::Color32) -> egui::Frame {
-    egui::Frame::new().fill(fill).stroke(egui::Stroke::new(1.0, stroke)).corner_radius(4).inner_margin(egui::Margin::same(14))
+    egui::Frame::new()
+        .fill(fill)
+        .stroke(egui::Stroke::new(1.0, stroke))
+        .corner_radius(4)
+        .inner_margin(egui::Margin::same(14))
 }
 
 fn scrollable_text_edit(ui: &mut egui::Ui, text: &mut String, height: f32, hint: &str) {
     // 多行 TextEdit 会根据内容计算内部排版高度。把它包进固定高度的
     // ScrollArea 后，长文本只会在这个区域内滚动，不会把整个表单撑高。
-    egui::ScrollArea::vertical().max_height(height).min_scrolled_height(height).auto_shrink(false).show(ui, |ui| {
-        ui.add_sized([ui.available_width(), height], egui::TextEdit::multiline(text).desired_width(f32::INFINITY).hint_text(hint));
-    });
+    egui::ScrollArea::vertical()
+        .max_height(height)
+        .min_scrolled_height(height)
+        .auto_shrink(false)
+        .show(ui, |ui| {
+            ui.add_sized(
+                [ui.available_width(), height],
+                egui::TextEdit::multiline(text)
+                    .desired_width(f32::INFINITY)
+                    .hint_text(hint),
+            );
+        });
 }
 
 fn path_display(ui: &mut egui::Ui, label: &str, value: &str) {

@@ -3,9 +3,6 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 /// 读取整个文件到内存。
-///
-/// 对学习项目来说，这是最直观的实现。大文件加密时更理想的做法是流式读取和加密，
-/// 但 AES-GCM 的认证标签和错误处理会让示例复杂很多，所以 v1 保持简单。
 pub fn read_file(path: &Path) -> io::Result<Vec<u8>> {
     fs::read(path)
 }
@@ -33,7 +30,10 @@ pub fn default_text_output_path() -> PathBuf {
 ///
 /// 如果加密文件里记录了原文件名，则默认使用 `decrypted-原文件名`，避免直接覆盖
 /// 用户电脑上可能仍然存在的原始文件。
-pub fn default_decrypted_output_path(encrypted_path: &Path, original_file_name: Option<&str>) -> PathBuf {
+pub fn default_decrypted_output_path(
+    encrypted_path: &Path,
+    original_file_name: Option<&str>,
+) -> PathBuf {
     let parent = encrypted_path.parent().unwrap_or_else(|| Path::new("."));
     let file_name = original_file_name
         .filter(|name| !name.trim().is_empty())
