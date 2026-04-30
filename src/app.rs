@@ -659,26 +659,22 @@ impl EncrustApp {
                 );
                 ui.add_space(12.0);
 
-                ui.with_layout(
-                    egui::Layout::left_to_right(egui::Align::Center).with_main_wrap(true),
-                    |ui| {
-                        let output_label = self
-                            .encrypted_output_path
-                            .as_ref()
-                            .map(|path| path.display().to_string())
-                            .unwrap_or_else(|| "未选择保存路径".to_owned());
+                let output_label = self
+                    .encrypted_output_path
+                    .as_ref()
+                    .map(|path| path.display().to_string())
+                    .unwrap_or_else(|| "未选择保存路径".to_owned());
 
-                        path_display(ui, "保存到", &output_label, colors);
+                path_display(ui, "保存到", &output_label, colors);
+                ui.add_space(8.0);
 
-                        if ui.add(secondary_button("另存为...", colors)).clicked() {
-                            let dialog = FileDialog::new().set_file_name("encrypted.encrust");
-                            if let Some(path) = dialog.save_file() {
-                                self.encrypted_output_path = Some(path);
-                                self.toast = None;
-                            }
-                        }
-                    },
-                );
+                if ui.add(secondary_button("另存为...", colors)).clicked() {
+                    let dialog = FileDialog::new().set_file_name("encrypted.encrust");
+                    if let Some(path) = dialog.save_file() {
+                        self.encrypted_output_path = Some(path);
+                        self.toast = None;
+                    }
+                }
             });
     }
 
@@ -780,30 +776,25 @@ impl EncrustApp {
                         ui.add_space(8.0);
                     }
 
-                    ui.with_layout(
-                        egui::Layout::left_to_right(egui::Align::Center).with_main_wrap(true),
-                        |ui| {
-                            let output_label = self
-                                .decrypted_output_path
-                                .as_ref()
-                                .map(|path| path.display().to_string())
-                                .unwrap_or_else(|| "未选择保存路径".to_owned());
-                            path_display(ui, "保存到", &output_label, colors);
+                    let output_label = self
+                        .decrypted_output_path
+                        .as_ref()
+                        .map(|path| path.display().to_string())
+                        .unwrap_or_else(|| "未选择保存路径".to_owned());
+                    path_display(ui, "保存到", &output_label, colors);
+                    ui.add_space(8.0);
 
-                            if ui.add(secondary_button("另存为...", colors)).clicked() {
-                                let file_name = self
-                                    .decrypted_file_name
-                                    .clone()
-                                    .unwrap_or_else(|| "decrypted-output".to_owned());
-                                if let Some(path) =
-                                    FileDialog::new().set_file_name(&file_name).save_file()
-                                {
-                                    self.decrypted_output_path = Some(path);
-                                    self.toast = None;
-                                }
-                            }
-                        },
-                    );
+                    if ui.add(secondary_button("另存为...", colors)).clicked() {
+                        let file_name = self
+                            .decrypted_file_name
+                            .clone()
+                            .unwrap_or_else(|| "decrypted-output".to_owned());
+                        if let Some(path) = FileDialog::new().set_file_name(&file_name).save_file()
+                        {
+                            self.decrypted_output_path = Some(path);
+                            self.toast = None;
+                        }
+                    }
 
                     ui.add_space(12.0);
                     let can_save = self.decrypted_output_path.is_some();
@@ -1133,15 +1124,15 @@ fn theme_colors(ctx: &egui::Context) -> ThemeColors {
 
     if visuals.dark_mode {
         ThemeColors {
-            app_bg: egui::Color32::from_rgb(15, 17, 23),
-            surface: egui::Color32::from_rgb(24, 27, 35),
-            surface_alt: egui::Color32::from_rgb(32, 36, 46),
-            border: egui::Color32::from_rgb(42, 46, 58),
-            border_hover: egui::Color32::from_rgb(60, 65, 82),
+            app_bg: egui::Color32::from_rgb(28, 28, 30),
+            surface: egui::Color32::from_rgb(44, 44, 46),
+            surface_alt: egui::Color32::from_rgb(58, 58, 60),
+            border: egui::Color32::from_rgb(72, 72, 74),
+            border_hover: egui::Color32::from_rgb(100, 100, 102),
             primary: DARK_PRIMARY,
-            primary_soft: egui::Color32::from_rgb(30, 33, 55),
-            text_main: egui::Color32::from_rgb(226, 228, 233),
-            text_muted: egui::Color32::from_rgb(139, 146, 168),
+            primary_soft: egui::Color32::from_rgb(40, 40, 55),
+            text_main: egui::Color32::from_rgb(235, 235, 235),
+            text_muted: egui::Color32::from_rgb(152, 152, 157),
             text_on_primary: egui::Color32::from_rgb(255, 255, 255),
             success: DARK_SUCCESS,
             success_bg: DARK_SUCCESS_BG,
@@ -1321,21 +1312,24 @@ fn path_display(ui: &mut egui::Ui, label: &str, value: &str, colors: ThemeColors
         .corner_radius(6)
         .inner_margin(egui::Margin::symmetric(12, 9))
         .show(ui, |ui| {
-            ui.with_layout(
-                egui::Layout::left_to_right(egui::Align::Center).with_main_wrap(true),
-                |ui| {
-                    ui.label(
-                        egui::RichText::new(format!("{label}："))
-                            .color(colors.text_muted)
-                            .size(13.0),
-                    );
-                    ui.label(
+            ui.set_width(ui.available_width());
+            ui.horizontal(|ui| {
+                ui.label(
+                    egui::RichText::new(format!("{label}："))
+                        .color(colors.text_muted)
+                        .size(13.0),
+                );
+                let available = ui.available_width();
+                ui.add_sized(
+                    [available.max(0.0), 18.0],
+                    egui::Label::new(
                         egui::RichText::new(value)
                             .color(colors.text_main)
                             .size(13.0),
-                    );
-                },
-            );
+                    )
+                    .truncate(),
+                );
+            });
         });
 }
 
