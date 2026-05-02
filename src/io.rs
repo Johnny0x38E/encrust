@@ -12,24 +12,13 @@ pub fn write_file(path: &Path, data: &[u8]) -> io::Result<()> {
     fs::write(path, data)
 }
 
-/// 文件加密的默认输出路径：在原文件名后追加 `.encrust`。
-///
-/// 例如 `/tmp/report.pdf` 会变成 `/tmp/report.pdf.encrust`。
-pub fn default_file_output_path(input_path: &Path) -> PathBuf {
-    let mut output = input_path.as_os_str().to_os_string();
-    output.push(".encrust");
-    PathBuf::from(output)
-}
-
-/// 文本加密没有源文件路径，所以默认放在当前工作目录。
-pub fn default_text_output_path() -> PathBuf {
-    PathBuf::from("encrypted-text.encrust")
-}
-
 /// 解密文件的默认保存路径。
 ///
 /// 如果加密文件里记录了原文件名，则默认使用 `decrypted-原文件名`，避免直接覆盖
 /// 用户电脑上可能仍然存在的原始文件。
+///
+/// 注意：加密输出不在这里提供默认路径。当前产品规则要求用户在加密前手动选择
+/// 保存位置，UI 只把默认文件名交给系统保存对话框作为建议。
 pub fn default_decrypted_output_path(
     encrypted_path: &Path,
     original_file_name: Option<&str>,
