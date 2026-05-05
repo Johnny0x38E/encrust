@@ -1,0 +1,172 @@
+{
+  "id": "2026-04-24-140458",
+  "generated_at": "2026-04-24T06:04:58.323383Z",
+  "language": "zh",
+  "pages": [
+    {
+      "slug": "1-xiang-mu-gai-shu-encrust-jia-mi-ying-yong-de-she-ji-mu-biao-yu-gong-neng-zong-lan",
+      "title": "项目概述：Encrust 加密应用的设计目标与功能总览",
+      "file": "1-xiang-mu-gai-shu-encrust-jia-mi-ying-yong-de-she-ji-mu-biao-yu-gong-neng-zong-lan.md",
+      "section": "快速入门",
+      "level": "Beginner"
+    },
+    {
+      "slug": "2-kuai-su-shang-shou-huan-jing-da-jian-yun-xing-yu-gou-jian",
+      "title": "快速上手：环境搭建、运行与构建",
+      "file": "2-kuai-su-shang-shou-huan-jing-da-jian-yun-xing-yu-gou-jian.md",
+      "section": "快速入门",
+      "level": "Beginner"
+    },
+    {
+      "slug": "3-zheng-ti-jia-gou-mo-kuai-zhi-ze-hua-fen-yu-shu-ju-liu-xiang",
+      "title": "整体架构：模块职责划分与数据流向",
+      "file": "3-zheng-ti-jia-gou-mo-kuai-zhi-ze-hua-fen-yu-shu-ju-liu-xiang.md",
+      "section": "深入解析",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "4-jia-mi-wen-jian-ge-shi-she-ji-mo-shu-tou-bu-jie-gou-yu-aad-ren-zheng",
+      "title": "加密文件格式设计：魔数、头部结构与 AAD 认证",
+      "file": "4-jia-mi-wen-jian-ge-shi-she-ji-mo-shu-tou-bu-jie-gou-yu-aad-ren-zheng.md",
+      "section": "深入解析",
+      "group": "密码学核心（crypto.rs）",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "5-mi-yao-pai-sheng-liu-cheng-argon2id-can-shu-xuan-ze-yu-zeroize-ling-hua-shi-jian",
+      "title": "密钥派生流程：Argon2id 参数选择与 Zeroize 零化实践",
+      "file": "5-mi-yao-pai-sheng-liu-cheng-argon2id-can-shu-xuan-ze-yu-zeroize-ling-hua-shi-jian.md",
+      "section": "深入解析",
+      "group": "密码学核心（crypto.rs）",
+      "level": "Advanced"
+    },
+    {
+      "slug": "6-aes-256-gcm-dui-cheng-jia-mi-yu-jie-mi-de-shi-xian-xi-jie",
+      "title": "AES-256-GCM 对称加密与解密的实现细节",
+      "file": "6-aes-256-gcm-dui-cheng-jia-mi-yu-jie-mi-de-shi-xian-xi-jie.md",
+      "section": "深入解析",
+      "group": "密码学核心（crypto.rs）",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "7-zi-ding-yi-er-jin-zhi-ge-shi-de-you-biao-shi-jie-xi-parse_header-yu-read_-fu-zhu-han-shu",
+      "title": "自定义二进制格式的游标式解析（parse_header 与 read_* 辅助函数）",
+      "file": "7-zi-ding-yi-er-jin-zhi-ge-shi-de-you-biao-shi-jie-xi-parse_header-yu-read_-fu-zhu-han-shu.md",
+      "section": "深入解析",
+      "group": "密码学核心（crypto.rs）",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "8-mi-ma-xue-xiao-yan-yu-cuo-wu-chu-li-ce-lue-cryptoerror-mei-ju-she-ji",
+      "title": "密码学校验与错误处理策略（CryptoError 枚举设计）",
+      "file": "8-mi-ma-xue-xiao-yan-yu-cuo-wu-chu-li-ce-lue-cryptoerror-mei-ju-she-ji.md",
+      "section": "深入解析",
+      "group": "密码学核心（crypto.rs）",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "9-eframe-egui-ying-yong-gu-jia-nativeoptions-app-trait-yu-chuang-kou-pei-zhi",
+      "title": "eframe/egui 应用骨架：NativeOptions、App trait 与窗口配置",
+      "file": "9-eframe-egui-ying-yong-gu-jia-nativeoptions-app-trait-yu-chuang-kou-pei-zhi.md",
+      "section": "深入解析",
+      "group": "图形界面层（app.rs）",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "10-jia-mi-gong-zuo-liu-ui-wen-jian-xuan-ze-wen-ben-shu-ru-shu-chu-lu-jing-yu-cao-zuo-hong-fa",
+      "title": "加密工作流 UI：文件选择、文本输入、输出路径与操作触发",
+      "file": "10-jia-mi-gong-zuo-liu-ui-wen-jian-xuan-ze-wen-ben-shu-ru-shu-chu-lu-jing-yu-cao-zuo-hong-fa.md",
+      "section": "深入解析",
+      "group": "图形界面层（app.rs）",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "11-jie-mi-gong-zuo-liu-ui-jia-mi-wen-jian-shu-ru-jie-guo-zhan-shi-yu-wen-jian-bao-cun",
+      "title": "解密工作流 UI：加密文件输入、结果展示与文件保存",
+      "file": "11-jie-mi-gong-zuo-liu-ui-jia-mi-wen-jian-shu-ru-jie-guo-zhan-shi-yu-wen-jian-bao-cun.md",
+      "section": "深入解析",
+      "group": "图形界面层（app.rs）",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "12-tuo-zhuai-wen-jian-bu-huo-ji-zhi-capture_dropped_files-yu-egui-shu-ru-shi-jian",
+      "title": "拖拽文件捕获机制（capture_dropped_files 与 egui 输入事件）",
+      "file": "12-tuo-zhuai-wen-jian-bu-huo-ji-zhi-capture_dropped_files-yu-egui-shu-ru-shi-jian.md",
+      "section": "深入解析",
+      "group": "图形界面层（app.rs）",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "13-toast-tong-zhi-xi-tong-cheng-gong-cuo-wu-zhuang-tai-fan-kui-yu-zi-dong-xiao-shi",
+      "title": "Toast 通知系统：成功/错误状态反馈与自动消失",
+      "file": "13-toast-tong-zhi-xi-tong-cheng-gong-cuo-wu-zhuang-tai-fan-kui-yu-zi-dong-xiao-shi.md",
+      "section": "深入解析",
+      "group": "图形界面层（app.rs）",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "14-min-gan-shu-ju-qing-li-ce-lue-cao-zuo-wan-cheng-hou-de-zhuang-tai-zhong-zhi-yu-mi-yao-qing-chu",
+      "title": "敏感数据清理策略：操作完成后的状态重置与密钥清除",
+      "file": "14-min-gan-shu-ju-qing-li-ce-lue-cao-zuo-wan-cheng-hou-de-zhuang-tai-zhong-zhi-yu-mi-yao-qing-chu.md",
+      "section": "深入解析",
+      "group": "图形界面层（app.rs）",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "15-ming-an-shuang-zhu-ti-pei-se-fang-an-themecolors-jie-gou-ti-yu-theme_colors-han-shu",
+      "title": "明暗双主题配色方案（ThemeColors 结构体与 theme_colors 函数）",
+      "file": "15-ming-an-shuang-zhu-ti-pei-se-fang-an-themecolors-jie-gou-ti-yu-theme_colors-han-shu.md",
+      "section": "深入解析",
+      "group": "视觉与主题",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "16-quan-ju-yang-shi-pei-zhi-jian-ju-yuan-jiao-kong-jian-zhuang-tai-de-shi-jue-zhi-xing-apply_app_style",
+      "title": "全局样式配置：间距、圆角、控件状态的视觉一致性（apply_app_style）",
+      "file": "16-quan-ju-yang-shi-pei-zhi-jian-ju-yuan-jiao-kong-jian-zhuang-tai-de-shi-jue-zhi-xing-apply_app_style.md",
+      "section": "深入解析",
+      "group": "视觉与主题",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "17-cjk-zi-ti-hui-tui-ji-zhi-kua-ping-tai-zhong-wen-zi-ti-jian-ce-yu-zhu-ce",
+      "title": "CJK 字体回退机制：跨平台中文字体检测与注册",
+      "file": "17-cjk-zi-ti-hui-tui-ji-zhi-kua-ping-tai-zhong-wen-zi-ti-jian-ce-yu-zhu-ce.md",
+      "section": "深入解析",
+      "group": "视觉与主题",
+      "level": "Beginner"
+    },
+    {
+      "slug": "18-wen-jian-du-xie-feng-zhuang-yu-mo-ren-lu-jing-sheng-cheng-ce-lue",
+      "title": "文件读写封装与默认路径生成策略",
+      "file": "18-wen-jian-du-xie-feng-zhuang-yu-mo-ren-lu-jing-sheng-cheng-ce-lue.md",
+      "section": "深入解析",
+      "group": "文件 I/O 与路径处理（io.rs）",
+      "level": "Beginner"
+    },
+    {
+      "slug": "19-mi-ma-xue-mo-kuai-de-dan-yuan-ce-shi-she-ji-zheng-xiang-liu-cheng-fan-xiang-mi-yao-yu-ge-shi-xiao-yan",
+      "title": "密码学模块的单元测试设计：正向流程、反向密钥与格式校验",
+      "file": "19-mi-ma-xue-mo-kuai-de-dan-yuan-ce-shi-she-ji-zheng-xiang-liu-cheng-fan-xiang-mi-yao-yu-ge-shi-xiao-yan.md",
+      "section": "深入解析",
+      "group": "测试与质量保障",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "20-kua-ping-tai-gou-jian-jiao-ben-macos-linux-windows-yu-release-gou-jian",
+      "title": "跨平台构建脚本（macOS / Linux / Windows）与 release 构建",
+      "file": "20-kua-ping-tai-gou-jian-jiao-ben-macos-linux-windows-yu-release-gou-jian.md",
+      "section": "深入解析",
+      "group": "构建与部署",
+      "level": "Beginner"
+    },
+    {
+      "slug": "21-kuo-zhan-fang-xiang-github-actions-duo-ping-tai-ci-yu-liu-shi-jia-mi-zhan-wang",
+      "title": "扩展方向：GitHub Actions 多平台 CI 与流式加密展望",
+      "file": "21-kuo-zhan-fang-xiang-github-actions-duo-ping-tai-ci-yu-liu-shi-jia-mi-zhan-wang.md",
+      "section": "深入解析",
+      "group": "构建与部署",
+      "level": "Advanced"
+    }
+  ]
+}

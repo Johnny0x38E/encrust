@@ -10,7 +10,6 @@
 .vscode/
 .claude/
 .agents/
-.zread/
 AGENTS.md
 CLAUDE.md
 *.swp

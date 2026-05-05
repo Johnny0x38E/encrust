@@ -1,0 +1,179 @@
+{
+  "id": "2026-05-02-161156",
+  "generated_at": "2026-05-02T08:11:56.995005Z",
+  "language": "zh",
+  "pages": [
+    {
+      "slug": "1-xiang-mu-gai-lan-yu-he-xin-jie-zhi",
+      "title": "项目概览与核心价值",
+      "file": "1-xiang-mu-gai-lan-yu-he-xin-jie-zhi.md",
+      "section": "快速入门",
+      "level": "Beginner"
+    },
+    {
+      "slug": "2-kuai-su-qi-dong-yu-yun-xing",
+      "title": "快速启动与运行",
+      "file": "2-kuai-su-qi-dong-yu-yun-xing.md",
+      "section": "快速入门",
+      "level": "Beginner"
+    },
+    {
+      "slug": "3-gong-neng-dao-lan-yu-shi-yong-chang-jing",
+      "title": "功能导览与使用场景",
+      "file": "3-gong-neng-dao-lan-yu-shi-yong-chang-jing.md",
+      "section": "快速入门",
+      "level": "Beginner"
+    },
+    {
+      "slug": "4-gou-jian-yu-ce-shi-ming-ling-can-kao",
+      "title": "构建与测试命令参考",
+      "file": "4-gou-jian-yu-ce-shi-ming-ling-can-kao.md",
+      "section": "快速入门",
+      "level": "Beginner"
+    },
+    {
+      "slug": "5-chuang-kou-sheng-ming-zhou-qi-yu-ru-kou-pei-zhi",
+      "title": "窗口生命周期与入口配置",
+      "file": "5-chuang-kou-sheng-ming-zhou-qi-yu-ru-kou-pei-zhi.md",
+      "section": "深入理解",
+      "group": "桌面应用架构",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "6-egui-jie-mian-bu-ju-yu-zhuang-tai-guan-li",
+      "title": "egui 界面布局与状态管理",
+      "file": "6-egui-jie-mian-bu-ju-yu-zhuang-tai-guan-li.md",
+      "section": "深入理解",
+      "group": "桌面应用架构",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "7-kua-ping-tai-cjk-zi-ti-hui-tui-yu-tu-biao-jia-zai",
+      "title": "跨平台 CJK 字体回退与图标加载",
+      "file": "7-kua-ping-tai-cjk-zi-ti-hui-tui-yu-tu-biao-jia-zai.md",
+      "section": "深入理解",
+      "group": "桌面应用架构",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "8-an-se-qian-se-zhu-ti-yu-shi-jue-xi-tong",
+      "title": "暗色/浅色主题与视觉系统",
+      "file": "8-an-se-qian-se-zhu-ti-yu-shi-jue-xi-tong.md",
+      "section": "深入理解",
+      "group": "桌面应用架构",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "9-wen-jian-tuo-zhuai-jiao-hu-yu-xi-tong-dui-hua-kuang-ji-cheng",
+      "title": "文件拖拽交互与系统对话框集成",
+      "file": "9-wen-jian-tuo-zhuai-jiao-hu-yu-xi-tong-dui-hua-kuang-ji-cheng.md",
+      "section": "深入理解",
+      "group": "桌面应用架构",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "10-jia-mi-mo-kuai-jia-gou-yu-gong-kai-api-she-ji",
+      "title": "加密模块架构与公开 API 设计",
+      "file": "10-jia-mi-mo-kuai-jia-gou-yu-gong-kai-api-she-ji.md",
+      "section": "深入理解",
+      "group": "加密系统设计",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "11-he-xin-shu-ju-mo-xing-yu-lei-xing-ding-yi",
+      "title": "核心数据模型与类型定义",
+      "file": "11-he-xin-shu-ju-mo-xing-yu-lei-xing-ding-yi.md",
+      "section": "深入理解",
+      "group": "加密系统设计",
+      "level": "Beginner"
+    },
+    {
+      "slug": "12-zi-miao-shu-wen-jian-ge-shi-yu-ban-ben-jian-rong-ce-lue",
+      "title": "自描述文件格式与版本兼容策略",
+      "file": "12-zi-miao-shu-wen-jian-ge-shi-yu-ban-ben-jian-rong-ce-lue.md",
+      "section": "深入理解",
+      "group": "加密系统设计",
+      "level": "Advanced"
+    },
+    {
+      "slug": "13-duo-aead-tao-jian-chou-xiang-yu-shi-xian",
+      "title": "多 AEAD 套件抽象与实现",
+      "file": "13-duo-aead-tao-jian-chou-xiang-yu-shi-xian.md",
+      "section": "深入理解",
+      "group": "加密系统设计",
+      "level": "Advanced"
+    },
+    {
+      "slug": "14-argon2id-mi-yao-pai-sheng-yu-can-shu-kuai-zhao",
+      "title": "Argon2id 密钥派生与参数快照",
+      "file": "14-argon2id-mi-yao-pai-sheng-yu-can-shu-kuai-zhao.md",
+      "section": "深入理解",
+      "group": "加密系统设计",
+      "level": "Advanced"
+    },
+    {
+      "slug": "15-jia-mi-yu-jie-mi-liu-cheng-bian-pai",
+      "title": "加密与解密流程编排",
+      "file": "15-jia-mi-yu-jie-mi-liu-cheng-bian-pai.md",
+      "section": "深入理解",
+      "group": "加密系统设计",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "16-aead-ren-zheng-fu-jia-shu-ju-yu-wen-jian-tou-an-quan-ji-zhi",
+      "title": "AEAD 认证附加数据与文件头安全机制",
+      "file": "16-aead-ren-zheng-fu-jia-shu-ju-yu-wen-jian-tou-an-quan-ji-zhi.md",
+      "section": "深入理解",
+      "group": "加密系统设计",
+      "level": "Advanced"
+    },
+    {
+      "slug": "17-lei-xing-hua-cuo-wu-chu-li-yu-an-quan-she-ji-yuan-ze",
+      "title": "类型化错误处理与安全设计原则",
+      "file": "17-lei-xing-hua-cuo-wu-chu-li-yu-an-quan-she-ji-yuan-ze.md",
+      "section": "深入理解",
+      "group": "安全与工程化",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "18-wen-jian-io-chou-xiang-yu-shu-chu-lu-jing-ce-lue",
+      "title": "文件 IO 抽象与输出路径策略",
+      "file": "18-wen-jian-io-chou-xiang-yu-shu-chu-lu-jing-ce-lue.md",
+      "section": "深入理解",
+      "group": "安全与工程化",
+      "level": "Beginner"
+    },
+    {
+      "slug": "19-dan-yuan-ce-shi-ce-lue-yu-xiang-hou-jian-rong-bao-zhang",
+      "title": "单元测试策略与向后兼容保障",
+      "file": "19-dan-yuan-ce-shi-ce-lue-yu-xiang-hou-jian-rong-bao-zhang.md",
+      "section": "深入理解",
+      "group": "安全与工程化",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "20-macos-tong-yong-er-jin-zhi-yu-dmg-da-bao",
+      "title": "macOS 通用二进制与 DMG 打包",
+      "file": "20-macos-tong-yong-er-jin-zhi-yu-dmg-da-bao.md",
+      "section": "深入理解",
+      "group": "跨平台构建与分发",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "21-linux-appimage-da-bao",
+      "title": "Linux AppImage 打包",
+      "file": "21-linux-appimage-da-bao.md",
+      "section": "深入理解",
+      "group": "跨平台构建与分发",
+      "level": "Intermediate"
+    },
+    {
+      "slug": "22-windows-ke-zhi-xing-wen-jian-gou-jian",
+      "title": "Windows 可执行文件构建",
+      "file": "22-windows-ke-zhi-xing-wen-jian-gou-jian.md",
+      "section": "深入理解",
+      "group": "跨平台构建与分发",
+      "level": "Intermediate"
+    }
+  ]
+}
